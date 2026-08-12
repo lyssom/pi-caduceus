@@ -10,6 +10,10 @@
 // ---------------------------------------------------------------------------
 
 import { join } from "node:path";
+import { writeFile, mkdir } from "node:fs/promises";
+import { dirname } from "node:path";
+
+import { lintPersonaContent, type LintIssue } from "./lint.ts";
 
 // ---------------------------------------------------------------------------
 // Public types
@@ -183,4 +187,38 @@ export function personaFilePath(
   // global
   const resolvedHome = home ?? join(process.env.HOME ?? "~", ".pi", "agent");
   return join(resolvedHome, "caduceus", "personas", `${name}.md`);
+}
+
+// ---------------------------------------------------------------------------
+// writeAndLint — side-effecting: writes the file, returns lint result
+// ---------------------------------------------------------------------------
+
+export type WriteAndLintResult = {
+  ok: boolean;
+  filePath: string;
+  issues: LintIssue[];
+};
+
+/**
+ * Write the generated content to the given path (creating parent dirs
+ * as needed), then run the lint on the content. Returns the lint
+ * verdict + the actual file path written.
+ *
+ * Side-effecting: this function creates directories and writes files.
+ * Pure tests for the underlying generation live in `wizard.test.ts`.
+ */
+export async function writeAndLint(
+  path: string,
+  content: string,
+  name: string,
+): Promise<WriteAndLintResult> {
+  // 1. Lint first (in-memory) so we don't write a known-bad file.
+  const lint = lintPersonaContent(content, name);
+  if (!lint.passed) {
+    return { ok: false, filePath: path, issues: lint.issues };
+  }
+  // 2. Create parent dirs + write the file.
+  await mkdir(dirname(path), { recursive: true });
+  await writeFile(path, content, "utf8");
+  return { ok: true, filePath: path, issues: [] };
 }

@@ -45,6 +45,11 @@ export type CommandDeps = {
   setSystemPromptMode: (mode: SystemPromptMode) => Promise<void>;
   lintActivePersona: () => LintResult;
   getActivePersonaName: () => PersonaName;
+  // v0.2.0 additions (wizard):
+  validateWizardStep: (step: string, value: string) => { ok: boolean; error?: string; value?: string };
+  generateWizardContent: (input: { name: string; description: string; style: "concise" | "verbose" | "friendly" | "strict" | "custom" }) => string;
+  wizardFilePath: (name: string, scope: "global" | "project", cwd: string) => string;
+  writeAndLint: (path: string, content: string, name: string) => Promise<{ ok: boolean; filePath: string; issues: { severity: "error" | "warning"; message: string; check: string }[] }>;
 };
 
 // ---------------------------------------------------------------------------
@@ -249,4 +254,52 @@ export function registerSlashCommands(
       ctx.ui.notify(lines.join("\n"), "warning");
     },
   });
+pi.registerCommand("caduceus:create", {
+  description: "Create a new persona from a name and description. Usage: /caduceus:create <name> <description...>",
+  handler: async (args, ctx) => {
+    const trimmed = args.trim();
+    const spaceIdx = trimmed.indexOf(" ");
+    if (spaceIdx < 0) {
+      ctx.ui.notify(
+        "usage: /caduceus:create <name> <description...>\n  example: /caduceus:create wizard Speaks like a wise wizard who never gives direct answers",
+        "info",
+      );
+      return;
+    }
+    const name = trimmed.slice(0, spaceIdx);
+    const description = trimmed.slice(spaceIdx + 1).trim();
+
+    const nameCheck = deps.validateWizardStep?.("name", name);
+    if (!nameCheck?.ok) {
+      ctx.ui.notify(`invalid name: ${nameCheck?.error ?? "unknown error"}`, "warning");
+      return;
+    }
+    const descCheck = deps.validateWizardStep?.("description", description);
+    if (!descCheck?.ok) {
+      ctx.ui.notify(`invalid description: ${descCheck?.error ?? "unknown error"}`, "warning");
+      return;
+    }
+
+    const content = deps.generateWizardContent!({ name, description, style: "custom" });
+    const path = deps.wizardFilePath!(name, "project", ctx.cwd);
+    const result = await deps.writeAndLint!(path, content, name);
+
+    if (!result.ok) {
+      const lines = [
+        `wizard: generated '${name}' but lint FAILED:`,
+        ...result.issues.map((i) => `  [${i.severity}] ${i.check}: ${i.message}`),
+        `file NOT written. fix the issues manually.`,
+      ];
+      ctx.ui.notify(lines.join("\n"), "warning");
+      return;
+    }
+
+    ctx.ui.notify(
+      `persona '${name}' written to ${result.filePath}\n` +
+      `lint passed. switch with: /caduceus:persona ${name}`,
+      "info",
+    );
+  },
+});
+
 }

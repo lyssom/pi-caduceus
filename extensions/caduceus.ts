@@ -36,6 +36,12 @@ import {
   type LoadedPersona,
 } from "../lib/persona-loader.ts";
 import { lintPersonaContent } from "../lib/lint.ts";
+import {
+  validateStep as validateWizardStep,
+  generatePersonaContent as generateWizardContent,
+  personaFilePath as wizardFilePath,
+  writeAndLint,
+} from "../lib/wizard.ts";
 import { CADUCEUS_VERSION } from "../lib/version.ts";
 import { CaduceusConfigError } from "../lib/errors.ts";
 
@@ -179,6 +185,11 @@ export default function caduceus(pi: ExtensionAPI): void {
     },
     getActivePersonaName: () =>
       loadedPersona?.name ?? DEFAULT_CONFIG.persona,
+    // v0.2.0 wizard:
+    validateWizardStep,
+    generateWizardContent,
+    wizardFilePath,
+    writeAndLint,
   });
 }
 

@@ -90,6 +90,27 @@ function makeMockDeps(overrides: Partial<CommandDeps> = {}): CommandDeps {
     },
     lintActivePersona: () => ({ passed: true, issues: [] }),
     getActivePersonaName: () => "gentleman",
+    // v0.2.0 additions:
+    validateWizardStep: (step, value) => {
+      if (step === "name" && /^[a-z0-9_-]+$/.test(value)) {
+        return { ok: true, value };
+      }
+      if (step === "description" && value.trim().length > 0) {
+        return { ok: true, value };
+      }
+      return { ok: false, error: "invalid" };
+    },
+    generateWizardContent: ({ name, description }) =>
+      `## el Gentleman Identity and Harness\n\nCurrent persona mode: \${mode}\n\nIdentity contract:\n- Foo.\n\n## Persona\nPersona:\n- ${description}\n- Be direct.\n\n## Harness principles\nHarness principles:\n- Bar.\n`,
+    wizardFilePath: (name, scope, cwd) =>
+      scope === "project"
+        ? `${cwd}/.caduceus/personas/${name}.md`
+        : `/tmp/${name}.md`,
+    writeAndLint: async (path, content, name) => ({
+      ok: true,
+      filePath: path,
+      issues: [],
+    }),
     ...overrides,
   };
 }
@@ -248,7 +269,7 @@ test("R-CONFIG-010-1: registerSlashCommands does NOT touch the status bar (that'
   const { ctx, statusUpdates } = makeMockCtx();
   registerSlashCommands(pi, makeMockDeps());
 
-  // Run all 7 commands; none should call setStatus
+  // Run all 8 commands; none should call setStatus
   for (const cmdName of [
     "caduceus:status",
     "caduceus:mode",
@@ -257,6 +278,7 @@ test("R-CONFIG-010-1: registerSlashCommands does NOT touch the status bar (that'
     "caduceus:prompt",
     "caduceus:persona",
     "caduceus:lint",
+    "caduceus:create",
   ]) {
     await pi.commands[cmdName].handler("", ctx);
   }
@@ -392,4 +414,110 @@ test("v0.1.1: /caduceus:lint fail shows issues (as warning type, since issues ar
   assert.match(notifications[0].message, /FAILED/);
   assert.match(notifications[0].message, /my-persona/);
   assert.match(notifications[0].message, /PERSONA_BLOCK/);
+});
+
+// ---------------------------------------------------------------------------
+// v0.2.0 — /caduceus:create wizard
+// ---------------------------------------------------------------------------
+
+test("v0.2.0: /caduceus:create with no args shows usage", async () => {
+  const pi = makeMockPi();
+  const { ctx, notifications } = makeMockCtx();
+  registerSlashCommands(pi, makeMockDeps());
+
+  await pi.commands["caduceus:create"].handler("", ctx);
+
+  assert.match(notifications[0].message, /usage: \/caduceus:create/);
+  assert.match(notifications[0].message, /example/);
+});
+
+test("v0.2.0: /caduceus:create with one arg (no description) shows usage", async () => {
+  const pi = makeMockPi();
+  const { ctx, notifications } = makeMockCtx();
+  registerSlashCommands(pi, makeMockDeps());
+
+  await pi.commands["caduceus:create"].handler("wizard", ctx);
+
+  assert.match(notifications[0].message, /usage: \/caduceus:create/);
+});
+
+test("v0.2.0: /caduceus:create with invalid name shows error", async () => {
+  const pi = makeMockPi();
+  const { ctx, notifications } = makeMockCtx();
+  const deps = makeMockDeps({
+    validateWizardStep: (step, value) => {
+      if (step === "name") return { ok: false, error: "invalid name" };
+      return { ok: true, value };
+    },
+  });
+  registerSlashCommands(pi, deps);
+
+  await pi.commands["caduceus:create"].handler("Bad Name Speaks like a wizard", ctx);
+
+  assert.match(notifications[0].message, /invalid name/);
+});
+
+test("v0.2.0: /caduceus:create with whitespace-only description is captured correctly", async () => {
+  // After the .trim() in the handler, "wizard   Hello world" → name="wizard", desc="Hello world"
+  // The description is what's passed to the wizard step validator.
+  const pi = makeMockPi();
+  const { ctx } = makeMockCtx();
+  let capturedDesc = null;
+  const deps = makeMockDeps({
+    validateWizardStep: (step, value) => {
+      if (step === "description") {
+        capturedDesc = value;
+        if (value.trim() === "") return { ok: false, error: "empty description" };
+        return { ok: true, value };
+      }
+      return { ok: true, value };
+    },
+  });
+  registerSlashCommands(pi, deps);
+
+  await pi.commands["caduceus:create"].handler("wizard   Hello world", ctx);
+  assert.equal(capturedDesc, "Hello world");
+});
+
+test("v0.2.0: /caduceus:create success path writes file and confirms", async () => {
+  const pi = makeMockPi();
+  const { ctx, notifications } = makeMockCtx();
+  let writtenPath = null;
+  const deps = makeMockDeps({
+    writeAndLint: async (path, content, name) => {
+      writtenPath = path;
+      return { ok: true, filePath: path, issues: [] };
+    },
+  });
+  registerSlashCommands(pi, deps);
+
+  await pi.commands["caduceus:create"].handler("wizard Speaks like a wise wizard", ctx);
+
+  assert.ok(writtenPath, "writeAndLint should have been called");
+  assert.equal(notifications.length, 1);
+  assert.match(notifications[0].message, /persona 'wizard' written/);
+  assert.match(notifications[0].message, /lint passed/);
+  assert.match(notifications[0].message, /switch with: \/caduceus:persona wizard/);
+});
+
+test("v0.2.0: /caduceus:create with lint failure does NOT write the file", async () => {
+  const pi = makeMockPi();
+  const { ctx, notifications } = makeMockCtx();
+  let writeCalled = false;
+  const deps = makeMockDeps({
+    writeAndLint: async (path, content, name) => {
+      writeCalled = true;
+      return { ok: false, filePath: path, issues: [{ severity: "error", check: "TEST", message: "test failure" }] };
+    },
+  });
+  registerSlashCommands(pi, deps);
+
+  await pi.commands["caduceus:create"].handler("bad-persona Some invalid description", ctx);
+
+  // writeAndLint is still called (which does the lint first), but the file
+  // is not actually written because the lint failed inside writeAndLint.
+  // The slash command sees ok: false and reports it without claiming success.
+  assert.equal(writeCalled, true, "writeAndLint was called (and did the lint)");
+  assert.match(notifications[0].message, /lint FAILED/);
+  assert.match(notifications[0].message, /file NOT written/);
 });
