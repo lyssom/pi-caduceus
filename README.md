@@ -70,9 +70,26 @@ gets a neutral Spanish response without voseo.
 | Command | Description |
 |---|---|
 | `/caduceus:status` | Show the effective configuration. |
-| `/caduceus:mode <gentleman\|neutral\|auto>` | Switch persona mode. |
+| `/caduceus:mode <gentleman\|neutral\|auto>` | Switch persona mode (language awareness). |
 | `/caduceus:locale <auto\|es-AR\|es-ES\|en\|zh>` | Set the locale preference. |
+| `/caduceus:persona <name\|list>` | Switch persona; `list` shows built-in + global + project. |
+| `/caduceus:prompt <append\|replace>` | How to inject the persona (append = default, replace = persona only). |
 | `/caduceus:inspect` | Print the rendered persona prompt. |
+| `/caduceus:lint` | Run static checks on the active persona. |
+
+## Built-in Personas
+
+| Persona | Style | Use case |
+|---|---|---|
+| `gentleman` | Senior architect, Rioplatense Spanish with voseo | Default. Senior dev/teaching tone. |
+| `neutral` | Professional, no voseo | Enterprise / formal contexts. |
+| `concise` | 1-3 sentence answers, no preamble | Quick answers, code-first. |
+| `reviewer` | Code review with BLOCKER/SHOULD/NIT severity | PR review mode. |
+
+Add your own by dropping a markdown file at
+`~/.pi/agent/caduceus/personas/<name>.md` (global) or
+`.caduceus/personas/<name>.md` (project), then run
+`/caduceus:persona <name>`.
 
 ## Configuration
 

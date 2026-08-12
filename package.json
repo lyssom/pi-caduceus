@@ -1,6 +1,6 @@
 {
   "name": "pi-caduceus",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Persona Contract package for pi. Injects a deterministic, testable, line-citable persona prompt segment before the first token of a pi session, given (mode, locale).",
   "type": "module",
   "license": "MIT",

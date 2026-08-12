@@ -90,6 +90,12 @@ test("before_agent_start handler returns { systemPrompt: <original> + <persona> 
     },
   );
 
+  // Ensure append mode (in case a global config has 'replace' from prior test runs)
+  await pi.commands["caduceus:prompt"].handler("append", {
+    cwd: "/tmp",
+    ui: { notify: () => {}, setStatus: () => {} },
+  } as unknown as Record<string, unknown>);
+
   const beforeStart = pi.handlers["before_agent_start"][0];
   const result = await beforeStart(
     { prompt: "hola, ¿cómo estás?", systemPrompt: "BASE_SYSTEM" },
