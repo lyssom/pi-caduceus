@@ -74,6 +74,38 @@ test("R-LINT-1d: prompts/reviewer.md passes lint", () => {
   assert.equal(result.passed, true, JSON.stringify(result.issues, null, 2));
 });
 
+// v0.2.0 — 6 new built-in personas
+
+test("v0.2.0: prompts/teacher.md passes lint", () => {
+  const result = lintPersonaContent(readBuiltInPrompt("teacher"), "teacher");
+  assert.equal(result.passed, true, JSON.stringify(result.issues, null, 2));
+});
+
+test("v0.2.0: prompts/security.md passes lint", () => {
+  const result = lintPersonaContent(readBuiltInPrompt("security"), "security");
+  assert.equal(result.passed, true, JSON.stringify(result.issues, null, 2));
+});
+
+test("v0.2.0: prompts/debugger.md passes lint", () => {
+  const result = lintPersonaContent(readBuiltInPrompt("debugger"), "debugger");
+  assert.equal(result.passed, true, JSON.stringify(result.issues, null, 2));
+});
+
+test("v0.2.0: prompts/socratic.md passes lint", () => {
+  const result = lintPersonaContent(readBuiltInPrompt("socratic"), "socratic");
+  assert.equal(result.passed, true, JSON.stringify(result.issues, null, 2));
+});
+
+test("v0.2.0: prompts/architect.md passes lint", () => {
+  const result = lintPersonaContent(readBuiltInPrompt("architect"), "architect");
+  assert.equal(result.passed, true, JSON.stringify(result.issues, null, 2));
+});
+
+test("v0.2.0: prompts/pirate.md passes lint", () => {
+  const result = lintPersonaContent(readBuiltInPrompt("pirate"), "pirate");
+  assert.equal(result.passed, true, JSON.stringify(result.issues, null, 2));
+});
+
 // ---------------------------------------------------------------------------
 // Check 1: cross-mode leakage — gentleman must not say "Do NOT use voseo"
 // ---------------------------------------------------------------------------

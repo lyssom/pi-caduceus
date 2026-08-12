@@ -45,6 +45,12 @@ const BUILT_IN_PERSONAS: ReadonlySet<PersonaName> = new Set([
   "neutral",
   "concise",
   "reviewer",
+  "teacher",
+  "security",
+  "debugger",
+  "socratic",
+  "architect",
+  "pirate",
 ]);
 
 // ---------------------------------------------------------------------------
