@@ -94,7 +94,7 @@ check("prompts/neutral.md exists", () => {
   pass("prompts/neutral.md exists");
 });
 
-check("test files exist (9 expected)", () => {
+check("test files exist (11 expected)", () => {
   const expected = [
     "tests/persona-contract.test.ts",
     "tests/language-clause.test.ts",
@@ -105,13 +105,15 @@ check("test files exist (9 expected)", () => {
     "tests/persona-loader.test.ts",
     "tests/lint.test.ts",
     "tests/prompt-mode.test.ts",
+    "tests/wizard.test.ts",
+    "tests/diff.test.ts",
   ];
   const missing = expected.filter((p) => !existsSync(join(root, p)));
   if (missing.length > 0) {
     fail("test files exist", `missing: ${missing.join(", ")}`);
     return;
   }
-  pass("test files exist (9 expected)");
+  pass("test files exist (11 expected)");
 });
 
 check("dependencies and devDependencies are empty", () => {

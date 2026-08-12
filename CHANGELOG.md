@@ -1,71 +1,77 @@
 # Changelog
 
-All notable changes to **caduceus** are documented here. The format is
-based on [Keep a Changelog](https://keepachangelog.com/), and this
-project adheres to [Semantic Versioning](https://semver.org/).
+All notable changes to **caduceus** are documented here.
+
+## [0.2.0] - 2026-08-12
+
+### Added
+
+- **6 new built-in personas**: `teacher`, `security`, `debugger`,
+  `socratic`, `architect`, `pirate`. Each follows the standard
+  4-block structure and is lint-clean. Total built-ins: 4 → 10.
+- **`/caduceus:create <name> <description...>`** — new slash
+  command that generates a persona file from a name and
+  description. Style defaults to `custom`; scope defaults to
+  `project`. Runs lint on the generated file; refuses to write
+  if lint fails. **Unique:** no LLM dependency (template-based,
+  byte-stable). Comparable to `@isr4el-silv4/persona`'s
+  `/persona create` but with built-in contract enforcement.
+- **`/caduceus:diff [a [b]]`** — new slash command that
+  renders two personas with the current mode + locale and
+  shows a unified diff. Defaults to diffing the active persona
+  against `gentleman`. Hand-rolled Myers diff (preserves
+  0 runtime deps).
+- **`buildPersonaPromptFromContent(content, mode, locale)`** —
+  new helper in `lib/persona-contract.ts` that renders a
+  persona from arbitrary markdown content (used by the diff
+  command).
+- New `lib/wizard.ts` module with `generatePersonaContent`,
+  `validateStep`, `personaFilePath`, `writeAndLint`, and the
+  `WizardStep` / `WizardStyle` / `WizardScope` types.
+- New `lib/diff.ts` module with `personaDiff` and
+  `computeUnifiedDiff` (the hand-rolled Myers algorithm).
+
+### Internal
+
+- `lib/persona-contract.ts` — adds `buildPersonaPromptFromContent`;
+  existing `buildPersonaPrompt` is unchanged (backward compat).
+- `lib/slash-commands.ts` — registers 2 new commands; adds
+  5 new deps for the wizard + diff layers.
+- `lib/persona-loader.ts` — `BUILT_IN_PERSONAS` set extended
+  with 6 new names.
+- `lib/errors.ts` — unchanged.
+- `extensions/caduceus.ts` — wires the 5 new deps
+  (validateWizardStep, generateWizardContent, wizardFilePath,
+  writeAndLint, personaDiff).
+- `tests/extension-entry.test.ts` — expects 9 slash commands
+  (was 7 in v0.1.0, 8 in v0.1.1).
+- `scripts/verify-package.mjs` — expects 11 test files (was 6 in
+  v0.1.0, 9 in v0.1.1).
+
+### Test count
+
+- v0.1.0: 68 tests across 6 files
+- v0.1.1: 116 tests across 9 files
+- v0.2.0: 165 tests across 11 files (+49 tests)
 
 ## [0.1.1] - 2026-08-12
 
 ### Added
 
-- **`/caduceus:prompt <append|replace>`** — new slash command to
-  switch between "append" (default, preserves pi's base system
-  prompt and appends the persona segment) and "replace" (the persona
-  segment becomes the entire system prompt). Reaches feature parity
-  with `@isr4el-silv4/persona` and `pi-custom-system-prompt`.
-- **`/caduceus:persona <name|list>`** — new slash command to switch
-  the active persona. `list` shows all available (built-in + global +
-  project). User personas are now discovered at
-  `~/.pi/agent/caduceus/personas/<name>.md` (global) and
-  `.caduceus/personas/<name>.md` (project) — no forking required.
-  Precedence: project > global > built-in.
-- **`/caduceus:lint`** — new slash command that runs static checks
-  on the active persona file: cross-mode voseo leakage, structural
-  blocks (identity / persona / principles), `${mode}` placeholder
-  presence, byte-stability (no ISO dates or UUIDs in persona body).
-  Errors fail the lint, warnings pass with notes. This is caduceus's
-  unique differentiator: **persona as a contract, verifiable**.
-- **Two new built-in personas**: `concise` (1-3 sentence answers, no
-  preamble) and `reviewer` (code review mode with BLOCKER/SHOULD/NIT
-  severity). Total built-ins: 4 (was 2).
-- **Two new config fields** with backward-compatible defaults:
-  `systemPromptMode` (default `"append"`) and `persona` (default
-  `"gentleman"`). Old `caduceus.json` files without these fields
-  continue to work.
-
-### Changed
-
-- `/caduceus:status` now shows `persona` and `systemPromptMode` in
-  addition to the original 4 fields.
-- The extension entry now closes over `cwd`, `loadedPersona`, and
-  `systemPromptMode` state, so persona switches via
-  `/caduceus:persona` take effect on the next LLM call without
-  requiring a session restart.
-
-### Internal
-
-- `lib/prompt-mode.ts` — new pure-function module
-  `composeSystemPrompt(base, persona, mode)`.
-- `lib/persona-loader.ts` — new module
-  `loadPersona(name, cwd, home?)` and `listPersonas(cwd, home?)`.
-- `lib/lint.ts` — new pure-function module
-  `lintPersonaContent(content, name)`.
-- `lib/persona-contract.ts` — refactored to expose
-  `buildPersonaPromptFromContent(content, mode, locale)` while
-  keeping the original `buildPersonaPrompt(mode, locale)` as a
-  thin wrapper (no breaking change).
-- `lib/config-store.ts` — `CaduceusConfig` adds two optional
-  fields; `DEFAULT_CONFIG` is the only required update.
-- `lib/slash-commands.ts` — registers 3 new commands.
-- `lib/errors.ts` — adds `CaduceusPersonaNotFoundError` and
-  `CaduceusLintError`.
-- `extensions/caduceus.ts` — wires 2 new closure variables and
-  updates `before_agent_start` to use `composeSystemPrompt`.
-
-### Test count
-
-- v0.1.0: 68 tests across 6 files
-- v0.1.1: 116 tests across 9 files (+48 tests)
+- `/caduceus:prompt <append|replace>` — slash command to switch
+  between "append" and "replace" prompt modes.
+- `/caduceus:persona <name|list>` — slash command to switch
+  persona. `list` shows all available (built-in + global +
+  project).
+- `/caduceus:lint` — slash command that runs static checks on
+  the active persona file.
+- Two new built-in personas: `concise` and `reviewer`.
+- Two new config fields with backward-compatible defaults:
+  `systemPromptMode` (default `"append"`) and `persona`
+  (default `"gentleman"`).
+- Persona filesystem discovery at
+  `~/.pi/agent/caduceus/personas/<name>.md` and
+  `.caduceus/personas/<name>.md`.
 
 ## [0.1.0] - 2026-08-12
 
@@ -73,11 +79,8 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 - Persona contract package: 2 built-in personas (gentleman,
   neutral) with byte-stable content from `gentle-pi`.
-- 4 slash commands: `/caduceus:status`, `/caduceus:mode`,
-  `/caduceus:locale`, `/caduceus:inspect`.
+- 4 slash commands.
 - JSONC-tolerant `.caduceusrc` project override.
-- Atomic config writes via tmp+rename.
-- Locale detection with voseo disambiguation.
 - 0 runtime dependencies. 0 postinstall. 0 native binaries.
 - 68 tests, 13 verify checks, all green.
 - Published to npm: `pi-caduceus@0.1.0`.

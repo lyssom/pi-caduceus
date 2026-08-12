@@ -76,20 +76,34 @@ gets a neutral Spanish response without voseo.
 | `/caduceus:prompt <append\|replace>` | How to inject the persona (append = default, replace = persona only). |
 | `/caduceus:inspect` | Print the rendered persona prompt. |
 | `/caduceus:lint` | Run static checks on the active persona. |
+| `/caduceus:create <name> <description>` | Generate a new persona file from a name and description. |
+| `/caduceus:diff [a [b]]` | Diff two personas (defaults: active vs gentleman). |
 
 ## Built-in Personas
 
-| Persona | Style | Use case |
+| Persona | Category | Use case |
 |---|---|---|
-| `gentleman` | Senior architect, Rioplatense Spanish with voseo | Default. Senior dev/teaching tone. |
-| `neutral` | Professional, no voseo | Enterprise / formal contexts. |
-| `concise` | 1-3 sentence answers, no preamble | Quick answers, code-first. |
-| `reviewer` | Code review with BLOCKER/SHOULD/NIT severity | PR review mode. |
+| `gentleman` | domain (default) | Senior architect, Rioplatense Spanish with voseo. |
+| `neutral` | domain | Professional, no voseo. Enterprise / formal contexts. |
+| `concise` | style | 1-3 sentence answers, no preamble. Quick answers, code-first. |
+| `reviewer` | style | Code review with BLOCKER/SHOULD/NIT severity. PR review mode. |
+| `teacher` | style | Patient teacher. Explains concepts step by step. |
+| `security` | domain | Paranoid security engineer. Flags vulns by severity. |
+| `debugger` | domain | Methodical debugger. Traces through code paths. |
+| `socratic` | style | Socratic teacher. Answers questions with questions. |
+| `architect` | domain | Systems architect. Names tradeoffs, prefers boring tech. |
+| `pirate` | style (easter egg) | Speaks like a pirate, technically accurate underneath. |
 
 Add your own by dropping a markdown file at
 `~/.pi/agent/caduceus/personas/<name>.md` (global) or
 `.caduceus/personas/<name>.md` (project), then run
-`/caduceus:persona <name>`.
+`/caduceus:persona <name>`. Or use the wizard:
+
+```bash
+/caduceus:create wizard Speaks like a wise wizard who never gives direct answers
+# Lints the result, writes to ./.caduceus/personas/wizard.md
+# Switch with: /caduceus:persona wizard
+```
 
 ## Configuration
 
