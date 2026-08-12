@@ -23,7 +23,10 @@ import { CaduceusConfigError } from "./errors.ts";
 // Public types
 // ---------------------------------------------------------------------------
 
-export type PersonaMode = "gentleman" | "neutral" | "auto";
+// v0.3.0: mode names renamed from v0.2.0 (gentleman|neutral|auto) to
+// (default|plain|auto). The v0.2.0 names are accepted on read (see
+// MODE_MIGRATION below) for one release, then removed in v0.4.0.
+export type PersonaMode = "default" | "plain" | "auto";
 export type LocalePreference = "auto" | string;
 export type SystemPromptMode = "append" | "replace";
 export type PersonaName = string;
@@ -45,13 +48,26 @@ export type EffectiveConfig = {
   source: ConfigSource;
 };
 
+// v0.3.0: backward-compat migration map for v0.2.0 config values.
+// A v0.2.0 user with `mode: "gentleman"` will be silently migrated
+// to `mode: "default"` on read (with a console.warn). The migration
+// is one-way: v0.3.0+ never writes the old names back to disk.
+export const MODE_MIGRATION: Readonly<Record<string, PersonaMode>> = {
+  gentleman: "default",
+  neutral: "plain",
+};
+export const PERSONA_MIGRATION: Readonly<Record<string, PersonaName>> = {
+  gentleman: "default",
+  neutral: "plain",
+};
+
 export const DEFAULT_CONFIG: CaduceusConfig = {
-  mode: "gentleman",
+  mode: "default",
   locale: "auto",
   showStatusBar: false,
   allowProjectOverride: true,
   systemPromptMode: "append",
-  persona: "gentleman",
+  persona: "default",
 };
 
 export type ConfigDeps = {
@@ -176,15 +192,42 @@ export function readConfig(deps: ConfigDeps): EffectiveConfig {
     }
     effective = { ...effective, ...projectConfig };
     if (globalConfig) {
-      return { config: effective, source: "global+project" };
+      return applyMigrations({ config: effective, source: "global+project" });
     }
-    return { config: effective, source: "project" };
+    return applyMigrations({ config: effective, source: "project" });
   }
 
   if (globalConfig) {
-    return { config: effective, source: "global" };
+    return applyMigrations({ config: effective, source: "global" });
   }
-  return { config: effective, source: "built-in defaults" };
+  return applyMigrations({ config: effective, source: "built-in defaults" });
+}
+
+// Apply v0.2.0 -> v0.3.0 migrations to an effective config.
+// Emits a single console.warn per migrated field. Called at the end
+// of readConfig, so the migration is transparent to callers.
+function applyMigrations(eff: EffectiveConfig): EffectiveConfig {
+  let config = eff.config;
+  let migrated = false;
+  if (MODE_MIGRATION[config.mode]) {
+    const oldMode = config.mode;
+    config = { ...config, mode: MODE_MIGRATION[oldMode] };
+    console.warn(
+      `caduceus: mode "${oldMode}" is deprecated; migrated to "${config.mode}". ` +
+        `Run /caduceus:mode ${config.mode} to update your config.`,
+    );
+    migrated = true;
+  }
+  if (PERSONA_MIGRATION[config.persona]) {
+    const oldPersona = config.persona;
+    config = { ...config, persona: PERSONA_MIGRATION[oldPersona] };
+    console.warn(
+      `caduceus: persona "${oldPersona}" is deprecated; migrated to "${config.persona}". ` +
+        `Run /caduceus:persona ${config.persona} to update your config.`,
+    );
+    migrated = true;
+  }
+  return migrated ? { config, source: eff.source } : eff;
 }
 
 // ---------------------------------------------------------------------------
