@@ -15,9 +15,16 @@
 
 import type { ExtensionAPI, ExtensionCommandContext } from "@earendil-works/pi-coding-agent";
 
-import type { CaduceusConfig, EffectiveConfig, PersonaMode } from "./config-store.ts";
+import type {
+  CaduceusConfig,
+  EffectiveConfig,
+  PersonaMode,
+  SystemPromptMode,
+} from "./config-store.ts";
 import { buildPersonaPrompt } from "./persona-contract.ts";
 import type { ResolvedLocale } from "./locale-detect.ts";
+import type { PersonaName } from "./persona-loader.ts";
+import type { LintResult } from "./lint.ts";
 
 // ---------------------------------------------------------------------------
 // Public API
@@ -32,6 +39,12 @@ export type CommandDeps = {
   ) => Promise<void>;
   getStatusLine: (config: CaduceusConfig) => string;
   renderInspectOutput: (mode: PersonaMode, locale: ResolvedLocale) => string;
+  // v0.1.1 additions:
+  listPersonas: (cwd: string) => PersonaName[];
+  switchPersona: (name: PersonaName) => Promise<void>;
+  setSystemPromptMode: (mode: SystemPromptMode) => Promise<void>;
+  lintActivePersona: () => LintResult;
+  getActivePersonaName: () => PersonaName;
 };
 
 // ---------------------------------------------------------------------------
@@ -92,13 +105,15 @@ export function registerSlashCommands(
 ): void {
   // /caduceus:status --------------------------------------------------------
   pi.registerCommand("caduceus:status", {
-    description: "Show the effective caduceus config (mode, locale, status bar, source).",
+    description: "Show the effective caduceus config (mode, locale, persona, prompt mode, source).",
     handler: async (_args: string, ctx: ExtensionCommandContext) => {
       const { config, source } = deps.readConfig(ctx.cwd);
       const lines = [
         "caduceus status:",
         `  mode: ${config.mode}`,
         `  locale: ${config.locale}`,
+        `  persona: ${config.persona}`,
+        `  systemPromptMode: ${config.systemPromptMode}`,
         `  showStatusBar: ${config.showStatusBar}`,
         `  allowProjectOverride: ${config.allowProjectOverride}`,
         `  source: ${source}`,
@@ -153,6 +168,85 @@ export function registerSlashCommands(
       const locale = config.locale as ResolvedLocale;
       const output = deps.renderInspectOutput(mode, locale);
       ctx.ui.notify(output, "info");
+    },
+  });
+
+  // /caduceus:prompt --------------------------------------------------------
+  pi.registerCommand("caduceus:prompt", {
+    description: "Set how the persona segment is injected: append (default) | replace.",
+    handler: async (args: string, ctx: ExtensionCommandContext) => {
+      const value = args.trim();
+      if (value !== "append" && value !== "replace") {
+        ctx.ui.notify(
+          `usage: /caduceus:prompt <append|replace> (got "${args}")`,
+          "warning",
+        );
+        return;
+      }
+      await deps.setSystemPromptMode(value);
+      ctx.ui.notify(`systemPromptMode set to ${value}`, "info");
+    },
+  });
+
+  // /caduceus:persona -------------------------------------------------------
+  pi.registerCommand("caduceus:persona", {
+    description: "Switch persona (<name>) or list all available (list).",
+    handler: async (args: string, ctx: ExtensionCommandContext) => {
+      const value = args.trim();
+      if (value === "list") {
+        const names = deps.listPersonas(ctx.cwd);
+        const lines = ["available personas:", ...names.map((n) => `  - ${n}`)];
+        ctx.ui.notify(lines.join("\n"), "info");
+        return;
+      }
+      if (value === "") {
+        ctx.ui.notify(
+          `usage: /caduceus:persona <name|list> (active: ${deps.getActivePersonaName()})`,
+          "info",
+        );
+        return;
+      }
+      try {
+        await deps.switchPersona(value);
+        ctx.ui.notify(`persona set to ${value}`, "info");
+      } catch (err) {
+        // CaduceusPersonaNotFoundError surfaces as a friendly message
+        ctx.ui.notify(
+          `persona not found: ${value}. Try /caduceus:persona list.`,
+          "warning",
+        );
+      }
+    },
+  });
+
+  // /caduceus:lint ----------------------------------------------------------
+  pi.registerCommand("caduceus:lint", {
+    description: "Run static checks on the active persona and report any contract violations.",
+    handler: async (_args: string, ctx: ExtensionCommandContext) => {
+      const result = deps.lintActivePersona();
+      const persona = deps.getActivePersonaName();
+      if (result.passed && result.issues.length === 0) {
+        ctx.ui.notify(`persona '${persona}': OK (no issues)`, "info");
+        return;
+      }
+      if (result.passed) {
+        // Has only warnings, no errors
+        const lines = [
+          `persona '${persona}': passed with ${result.issues.length} warning(s):`,
+          ...result.issues.map(
+            (i) => `  [${i.severity}] ${i.check}: ${i.message}`,
+          ),
+        ];
+        ctx.ui.notify(lines.join("\n"), "info");
+        return;
+      }
+      const lines = [
+        `persona '${persona}': FAILED lint (${result.issues.length} issue(s)):`,
+        ...result.issues.map(
+          (i) => `  [${i.severity}] ${i.check}: ${i.message}`,
+        ),
+      ];
+      ctx.ui.notify(lines.join("\n"), "warning");
     },
   });
 }

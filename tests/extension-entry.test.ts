@@ -30,7 +30,7 @@ function makeMockPi() {
   };
 }
 
-test("extension registers session_start, before_agent_start, and 4 slash commands", () => {
+test("extension registers session_start, before_agent_start, and 7 slash commands", () => {
   const pi = makeMockPi();
   caduceus(pi as unknown as Parameters<typeof caduceus>[0]);
 
@@ -42,13 +42,16 @@ test("extension registers session_start, before_agent_start, and 4 slash command
   assert.ok(pi.handlers["before_agent_start"], "before_agent_start handler must be registered");
   assert.equal(pi.handlers["before_agent_start"].length, 1);
 
-  // 3. 4 slash commands
-  assert.equal(Object.keys(pi.commands).length, 4, "exactly 4 commands must be registered");
+  // 3. 7 slash commands (4 from v0.1.0 + 3 from v0.1.1)
+  assert.equal(Object.keys(pi.commands).length, 7, "exactly 7 commands must be registered");
   for (const name of [
     "caduceus:status",
     "caduceus:mode",
     "caduceus:locale",
     "caduceus:inspect",
+    "caduceus:prompt",
+    "caduceus:persona",
+    "caduceus:lint",
   ]) {
     assert.ok(pi.commands[name], `${name} must be registered`);
     assert.equal(typeof pi.commands[name].handler, "function");
@@ -98,4 +101,34 @@ test("before_agent_start handler returns { systemPrompt: <original> + <persona> 
   assert.ok(sysPrompt.startsWith("BASE_SYSTEM\n\n"), "systemPrompt must start with original + '\\n\\n'");
   assert.match(sysPrompt, /Current persona mode: gentleman/);
   assert.match(sysPrompt, /Rioplatense Spanish with voseo/);
+});
+
+test("v0.1.1: before_agent_start with systemPromptMode='replace' returns persona only (no base prefix)", async () => {
+  const pi = makeMockPi();
+  caduceus(pi as unknown as Parameters<typeof caduceus>[0]);
+
+  const sessionStart = pi.handlers["session_start"][0];
+  await sessionStart(
+    {},
+    {
+      cwd: "/tmp",
+      ui: { notify: () => {}, setStatus: () => {} },
+    },
+  );
+
+  // Switch to replace mode
+  await pi.commands["caduceus:prompt"].handler("replace", {
+    cwd: "/tmp",
+    ui: { notify: () => {}, setStatus: () => {} },
+  } as unknown as Record<string, unknown>);
+
+  const beforeStart = pi.handlers["before_agent_start"][0];
+  const result = await beforeStart(
+    { prompt: "hola", systemPrompt: "BASE_SYSTEM_SHOULD_NOT_APPEAR" },
+    { cwd: "/tmp" },
+  );
+
+  const sysPrompt = (result as { systemPrompt: string }).systemPrompt;
+  assert.ok(!sysPrompt.includes("BASE_SYSTEM_SHOULD_NOT_APPEAR"), "replace mode must omit the base");
+  assert.match(sysPrompt, /Current persona mode: gentleman/);
 });

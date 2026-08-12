@@ -80,6 +80,16 @@ function makeMockDeps(overrides: Partial<CommandDeps> = {}): CommandDeps {
     getStatusLine: (cfg) => `caduceus · ${cfg.mode} · ${cfg.locale}`,
     renderInspectOutput: (mode, locale) =>
       `[inspect] ${mode}/${locale}\n[inspect line 2]`,
+    // v0.1.1 additions:
+    listPersonas: () => ["gentleman", "neutral", "concise", "reviewer"],
+    switchPersona: async (name) => {
+      writes.push({ field: "persona", value: name });
+    },
+    setSystemPromptMode: async (mode) => {
+      writes.push({ field: "systemPromptMode", value: mode });
+    },
+    lintActivePersona: () => ({ passed: true, issues: [] }),
+    getActivePersonaName: () => "gentleman",
     ...overrides,
   };
 }
@@ -238,11 +248,148 @@ test("R-CONFIG-010-1: registerSlashCommands does NOT touch the status bar (that'
   const { ctx, statusUpdates } = makeMockCtx();
   registerSlashCommands(pi, makeMockDeps());
 
-  // Run all 4 commands; none should call setStatus
-  await pi.commands["caduceus:status"].handler("", ctx);
-  await pi.commands["caduceus:mode"].handler("neutral", ctx);
-  await pi.commands["caduceus:locale"].handler("es-AR", ctx);
-  await pi.commands["caduceus:inspect"].handler("", ctx);
+  // Run all 7 commands; none should call setStatus
+  for (const cmdName of [
+    "caduceus:status",
+    "caduceus:mode",
+    "caduceus:locale",
+    "caduceus:inspect",
+    "caduceus:prompt",
+    "caduceus:persona",
+    "caduceus:lint",
+  ]) {
+    await pi.commands[cmdName].handler("", ctx);
+  }
 
   assert.equal(statusUpdates.length, 0, "slash commands must not call ctx.ui.setStatus");
+});
+
+// ---------------------------------------------------------------------------
+// v0.1.1 — 3 new slash commands
+// ---------------------------------------------------------------------------
+
+test("v0.1.1: /caduceus:prompt replace persists and confirms", async () => {
+  const pi = makeMockPi();
+  const { ctx, notifications } = makeMockCtx();
+  const writes: Array<{ field: string; value: unknown }> = [];
+  const deps = makeMockDeps({
+    setSystemPromptMode: async (mode) => {
+      writes.push({ field: "systemPromptMode", value: mode });
+    },
+  });
+  registerSlashCommands(pi, deps);
+
+  await pi.commands["caduceus:prompt"].handler("replace", ctx);
+
+  assert.equal(writes.length, 1);
+  assert.equal(writes[0].field, "systemPromptMode");
+  assert.equal(writes[0].value, "replace");
+  assert.match(notifications[0].message, /set to replace/);
+});
+
+test("v0.1.1: /caduceus:prompt invalid shows usage hint, no write", async () => {
+  const pi = makeMockPi();
+  const { ctx, notifications } = makeMockCtx();
+  const writes: Array<{ field: string; value: unknown }> = [];
+  const deps = makeMockDeps({
+    setSystemPromptMode: async (mode) => {
+      writes.push({ field: "systemPromptMode", value: mode });
+    },
+  });
+  registerSlashCommands(pi, deps);
+
+  await pi.commands["caduceus:prompt"].handler("invalid-mode", ctx);
+
+  assert.equal(writes.length, 0, "invalid mode must not write");
+  assert.match(notifications[0].message, /usage: \/caduceus:prompt/);
+});
+
+test("v0.1.1: /caduceus:persona list shows all available", async () => {
+  const pi = makeMockPi();
+  const { ctx, notifications } = makeMockCtx();
+  const deps = makeMockDeps({
+    listPersonas: () => ["gentleman", "neutral", "concise", "reviewer", "pirate"],
+  });
+  registerSlashCommands(pi, deps);
+
+  await pi.commands["caduceus:persona"].handler("list", ctx);
+
+  assert.equal(notifications.length, 1);
+  const msg = notifications[0].message;
+  assert.match(msg, /gentleman/);
+  assert.match(msg, /neutral/);
+  assert.match(msg, /concise/);
+  assert.match(msg, /reviewer/);
+  assert.match(msg, /pirate/);
+});
+
+test("v0.1.1: /caduceus:persona concise switches and confirms", async () => {
+  const pi = makeMockPi();
+  const { ctx, notifications } = makeMockCtx();
+  const writes: Array<{ field: string; value: unknown }> = [];
+  const deps = makeMockDeps({
+    switchPersona: async (name) => {
+      writes.push({ field: "persona", value: name });
+    },
+  });
+  registerSlashCommands(pi, deps);
+
+  await pi.commands["caduceus:persona"].handler("concise", ctx);
+
+  assert.equal(writes.length, 1);
+  assert.equal(writes[0].value, "concise");
+  assert.match(notifications[0].message, /persona set to concise/);
+});
+
+test("v0.1.1: /caduceus:persona nonexistent shows error (no throw)", async () => {
+  const pi = makeMockPi();
+  const { ctx, notifications } = makeMockCtx();
+  const deps = makeMockDeps({
+    switchPersona: async () => {
+      throw new Error("CADUCEUS_PERSONA_NOT_FOUND: nope");
+    },
+  });
+  registerSlashCommands(pi, deps);
+
+  // The slash-commands lib catches the error and shows a friendly message
+  await pi.commands["caduceus:persona"].handler("nope", ctx);
+
+  assert.match(notifications[0].message, /persona not found/);
+});
+
+test("v0.1.1: /caduceus:lint pass shows 'OK'", async () => {
+  const pi = makeMockPi();
+  const { ctx, notifications } = makeMockCtx();
+  const deps = makeMockDeps({
+    lintActivePersona: () => ({ passed: true, issues: [] }),
+    getActivePersonaName: () => "gentleman",
+  });
+  registerSlashCommands(pi, deps);
+
+  await pi.commands["caduceus:lint"].handler("", ctx);
+
+  assert.equal(notifications.length, 1);
+  assert.match(notifications[0].message, /OK/);
+  assert.match(notifications[0].message, /gentleman/);
+});
+
+test("v0.1.1: /caduceus:lint fail shows issues (as warning type, since issues are user-actionable)", async () => {
+  const pi = makeMockPi();
+  const { ctx, notifications } = makeMockCtx();
+  const deps = makeMockDeps({
+    lintActivePersona: () => ({
+      passed: false,
+      issues: [
+        { severity: "error", check: "PERSONA_BLOCK", message: "missing ## Persona section" },
+      ],
+    }),
+    getActivePersonaName: () => "my-persona",
+  });
+  registerSlashCommands(pi, deps);
+
+  await pi.commands["caduceus:lint"].handler("", ctx);
+
+  assert.match(notifications[0].message, /FAILED/);
+  assert.match(notifications[0].message, /my-persona/);
+  assert.match(notifications[0].message, /PERSONA_BLOCK/);
 });
