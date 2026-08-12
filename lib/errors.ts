@@ -25,3 +25,23 @@ export class CaduceusConfigError extends CaduceusError {
     this.path = path;
   }
 }
+
+export class CaduceusPersonaNotFoundError extends CaduceusError {
+  readonly persona: string;
+
+  constructor(persona: string) {
+    super(`Persona not found: ${persona}`, "CADUCEUS_PERSONA_NOT_FOUND");
+    this.name = "CaduceusPersonaNotFoundError";
+    this.persona = persona;
+  }
+}
+
+export class CaduceusLintError extends CaduceusError {
+  readonly issueCount: number;
+
+  constructor(message: string, issueCount: number) {
+    super(message, "CADUCEUS_LINT_FAILED");
+    this.name = "CaduceusLintError";
+    this.issueCount = issueCount;
+  }
+}
