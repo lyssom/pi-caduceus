@@ -1,0 +1,16 @@
+# Local Pi runtime state
+.atl/
+
+# Node / TypeScript build artifacts
+node_modules/
+dist/
+*.tsbuildinfo
+*.log
+.env
+.env.local
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

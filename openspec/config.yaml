@@ -1,0 +1,48 @@
+schemaName: spec-driven
+project: caduceus
+version: 0.1.0
+change: caduceus-v0.1.0
+artifactStore: openspec
+strictTdd: true
+testRunner: node --experimental-strip-types --test tests/*.test.ts
+packageManager: pnpm@11.1.1
+license: MIT
+runtimeDependencies: 0
+peerDependencies:
+  - "@earendil-works/pi-coding-agent"
+keywords:
+  - pi-package
+  - pi
+  - pi-coding-agent
+  - caduceus
+  - persona
+  - prompt-orchestration
+  - sdd
+  - openspec
+  - tdd
+  - ai-coding-agent
+npmName: "@lyssom/pi-caduceus"
+github:
+  owner: lyssom
+  repo: pi-caduceus
+brand:
+  primary: "#1B4D7A"
+  secondary: "#7FB3D5"
+  tagline: "The contract that shapes the voice."
+  antiTagline: "Persona is a contract, not a costume."
+phases:
+  - init
+  - explore
+  - proposal
+  - spec
+  - design
+  - tasks
+  - apply
+  - verify
+  - sync
+  - archive
+preflight:
+  executionMode: interactive
+  artifactStore: openspec
+  chainedPrStrategy: single-pr-default
+  reviewBudget: 400
