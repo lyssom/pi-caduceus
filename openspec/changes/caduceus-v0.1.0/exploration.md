@@ -115,7 +115,7 @@ example:
 
 ```json
 {
-  "name": "@lyssom/pi-caduceus",
+  "name": "pi-caduceus",
   "version": "0.1.0",
   "type": "module",
   "license": "MIT",
@@ -493,7 +493,7 @@ the `pi` manifest; omitting them is supported.
 |---|---|---|---|
 | R-1 (high) | `pi-coding-agent` extension API not snapshotted | **DE-RISKED** — full API surface read from `dist/index.d.ts` and `dist/core/extensions/types.d.ts` at v0.84.1; runner chaining verified by reading `dist/core/extensions/runner.js:837-893` | Resolved |
 | R-2 (medium) | `pi-tui` peer may not be re-exported as a peer | **DE-RISKED** — v0.1.0 does not need `pi-tui`; the status bar uses `ctx.ui.setStatus()` (text), no `Component` factory required. If we add a custom widget later, we can revisit. | Resolved |
-| R-3 (medium) | `lyssom` GitHub org does not exist; gh token lacks `admin:org` | **UNCHANGED** — out of band for SDD; user must run `gh auth refresh -h github.com -s admin:org` + create org before publish. | Remains |
+| R-3 (medium) | `lyssom` GitHub org does not exist; gh token lacks `admin:org` | **RESOLVED post-apply** — caduceus switched to unscoped npm name `pi-caduceus`; repo goes under existing `lyssom` GitHub user account, no org needed. Out-of-band: `gh repo create lyssom/pi-caduceus --public --source=. --remote=origin --push`. | Resolved |
 | R-4 (low) | `pnpm@11.1.1` may not be installed on the apply host | **UNCHANGED** — apply phase checks `which pnpm`; falls back to `npm` if missing, but the test runner does not actually need pnpm (it uses `node --test` directly). Update: pnpm is only needed if a user wants `pnpm test` as the canonical command; we will document both `pnpm test` and `node --experimental-strip-types --test tests/*.test.ts`. | Remains, downgraded to "cosmetic" |
 
 New risks surfaced during exploration:
@@ -526,7 +526,7 @@ New risks surfaced during exploration:
    (markdown-friendly) or JSON? My read: text with line numbers, since
    `caduceus inspect` is the falsifiability check per DNA-2.
 5. **Whether to ship a `README.md` with a `Quick Start` section that
-   shows `pi install npm:@lyssom/pi-caduceus` + a screenshot of
+   shows `pi install npm:pi-caduceus` + a screenshot of
    `/caduceus:inspect` output** (text-rendered, not image).
 
 ## 11. Recommendation

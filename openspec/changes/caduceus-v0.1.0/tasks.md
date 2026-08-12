@@ -361,7 +361,7 @@ since it's harmless.
   short form, year 2026, copyright "el Gentleman / lyssom").
   <!-- sdd-owner: implementation -->
 - [ ] Create `README.md` with: positioning paragraph, install
-  command (`pi install npm:@lyssom/pi-caduceus`), Quick Start
+  command (`pi install npm:pi-caduceus`), Quick Start
   section showing `/caduceus:status` and `/caduceus:inspect`
   output (text-rendered), configuration section explaining
   the JSONC `.caduceusrc`, link to `INIT.md` for rationale.
@@ -402,20 +402,22 @@ these; the sdd-archive phase records them as
 `deferredParentActions` and the parent orchestrator reminds
 the user about them at archive time.
 
-- [ ] D-1: User runs `npm login --scope=lyssom` (one-time
-  per machine) to enable publishing to the `lyssom` scope.
+- [ ] D-1: User runs `gh repo create lyssom/pi-caduceus --public
+  --source=. --remote=origin --push` to create the GitHub repo
+  under the existing `lyssom` user account and push the first
+  commit. (No org creation or `admin:org` scope needed.)
   <!-- sdd-owner: parent -->
-- [ ] D-2: User creates the `lyssom` GitHub org
-  (out-of-band, requires `gh auth refresh -h github.com
-  -s admin:org` first) and the `lyssom/pi-caduceus` repo.
+- [ ] D-2: User runs `npm login` (one-time per machine; no
+  `--scope` flag — the package is unscoped `pi-caduceus`).
   <!-- sdd-owner: parent -->
 - [ ] D-3: User runs `npm publish --access=public` from
   the caduceus repo root after D-1 and D-2 are done.
   <!-- sdd-owner: parent -->
-- [ ] D-4: User pushes the local git repo to
-  `git@github.com:lyssom/pi-caduceus.git` and verifies the
-  package appears on `https://pi.dev/packages` within
-  ~10 minutes (gallery auto-indexing). <!-- sdd-owner: parent -->
+- [ ] D-4: User verifies the package appears on
+  `https://pi.dev/packages` within ~10 minutes (gallery
+  auto-indexing) and confirms the install command
+  `pi install npm:pi-caduceus` works.
+  <!-- sdd-owner: parent -->
 
 ## Cross-task dependencies
 

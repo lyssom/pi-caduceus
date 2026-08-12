@@ -21,10 +21,11 @@ keywords:
   - openspec
   - tdd
   - ai-coding-agent
-npmName: "@lyssom/pi-caduceus"
+npmName: "pi-caduceus"
 github:
-  owner: lyssom
+  owner: lyssom       # GitHub user account (no separate org)
   repo: pi-caduceus
+  scope: unscoped     # npm package has no scope; lives directly under its name
 brand:
   primary: "#1B4D7A"
   secondary: "#7FB3D5"

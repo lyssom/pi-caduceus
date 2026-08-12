@@ -708,7 +708,7 @@ Key design decisions:
 
 ```json
 {
-  "name": "@lyssom/pi-caduceus",
+  "name": "pi-caduceus",
   "version": "0.1.0",
   "description": "Persona Contract package for pi. Injects a deterministic, testable persona prompt segment before the first token of a pi session.",
   "type": "module",
@@ -855,7 +855,7 @@ node --experimental-strip-types --test tests/*.test.ts  # must exit 0
 node scripts/verify-package.mjs                          # must exit 0
 pnpm pack                                                # produces .tgz
 # Inspect the tarball:
-tar -tzf lyssom-pi-caduceus-0.1.0.tgz | grep -E '\.node$|bin/'  # must be empty
+tar -tzf pi-caduceus-0.1.0.tgz | grep -E '\.node$|bin/'  # must be empty
 # Smoke test in a temp dir:
 mkdir /tmp/caduceus-smoke && cd /tmp/caduceus-smoke
 pi install /root/caduceus                                # local install
@@ -866,8 +866,10 @@ pi                                                        # launch TUI
 
 ### 14.2 Publish (out-of-band, see `proposal.md §13`)
 
-1. User creates `lyssom` GitHub org (out of band).
-2. User runs `npm login --scope=lyssom`.
+1. User runs `gh repo create lyssom/pi-caduceus --public --source=.
+   --remote=origin --push` (creates the GitHub repo under the
+   existing `lyssom` user account; no org needed).
+2. User runs `npm login` (no `--scope`; package is unscoped).
 3. `npm publish --access=public` from the caduceus root.
 4. User pushes the local git repo to
    `git@github.com:lyssom/pi-caduceus.git`.
@@ -878,7 +880,7 @@ pi                                                        # launch TUI
 
 ```bash
 # In a separate empty directory:
-pi install npm:@lyssom/pi-caduceus
+pi install npm:pi-caduceus
 pi
 # /caduceus:status should appear
 # /caduceus:inspect should print the persona prompt

@@ -262,7 +262,7 @@ NOT call `setStatus` (or MUST call it with `undefined` to clear).
 #### Scenario: S-CONFIG-011-1
 
 - **GIVEN** the published `package.json`
-- **WHEN** `pi install npm:@lyssom/pi-caduceus` runs
+- **WHEN** `pi install npm:pi-caduceus` runs
 - **THEN** the extension, theme, and prompts are registered
 - **AND** the package is discoverable on `https://pi.dev/packages`
 
@@ -297,7 +297,7 @@ not require any third-party npm package.
 #### Scenario: S-CONFIG-013-1
 
 - **GIVEN** the published `package.json`
-- **WHEN** `npm view @lyssom/pi-caduceus peerDependencies` is
+- **WHEN** `npm view pi-caduceus peerDependencies` is
   inspected
 - **THEN** `@earendil-works/pi-coding-agent` is listed with
   range `"*"`

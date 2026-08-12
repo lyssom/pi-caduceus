@@ -1,4 +1,4 @@
-# @lyssom/pi-caduceus
+# pi-caduceus
 
 > **Persona Contract package for [pi](https://pi.dev).**
 > Injects a deterministic, testable, line-citable persona prompt segment
@@ -22,7 +22,7 @@ gentle-pi's other machinery — install caduceus.
 ## Install
 
 ```bash
-pi install npm:@lyssom/pi-caduceus
+pi install npm:pi-caduceus
 ```
 
 The package registers one extension (`extensions/caduceus.ts`), one

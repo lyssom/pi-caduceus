@@ -165,11 +165,11 @@ repo are modified because there are none beyond `INIT.md` and
 
 External touchpoints:
 
-- `npm` registry (new package `@lyssom/pi-caduceus`)
+- `npm` registry (new package `pi-caduceus`)
 - `pi.dev` gallery (auto-indexed on first publish, per
   `pi.dev/docs/latest/packages`)
-- GitHub `lyssom/pi-caduceus` repository (user must create the
-  `lyssom` org first — see R-3)
+- GitHub `lyssom/pi-caduceus` repository (under the existing `lyssom`
+  GitHub user account — no separate org needed; see R-3)
 
 ## 6. Persona contract — DNA-2 in practice
 
@@ -228,7 +228,7 @@ order: project `.caduceusrc` → global `~/.pi/agent/caduceus.json`
 |---|---|---|---|---|
 | R-1 | pi-coding-agent API mismatch | — | — | **RESOLVED** — API verified at v0.84.1 |
 | R-2 | pi-tui peer requirement | — | — | **RESOLVED** — not needed in v0.1.0 |
-| R-3 | `lyssom` GitHub org does not exist | medium | medium | Out of band for SDD. User must run `gh auth refresh -h github.com -s admin:org` and create the org before `npm publish`. Documented in README. |
+| R-3 | `lyssom` GitHub org does not exist | medium | medium | **RESOLVED post-apply** — package now unscoped `pi-caduceus`; repo goes under the existing `lyssom` GitHub user account. Out-of-band: `gh repo create lyssom/pi-caduceus --public --source=. --remote=origin --push`. |
 | R-4 | pnpm@11.1.1 may be missing | low | low | Test command uses system Node, not pnpm. `packageManager` field is **omitted** from `package.json` to avoid locking non-pnpm users. README recommends pnpm but does not require it. |
 | R-5 | Gallery `image` field requires HTTPS URL we don't have | low | low | `pi.image` is **omitted** for v0.1.0. Card is text-only. v0.1.1 adds the banner when designed. |
 | R-6 | `packageManager` field would lock non-pnpm users | low | low | **Omit** the field. README recommends pnpm only. |
@@ -275,7 +275,7 @@ optionally `zh.json`).
 
 `package.json` `pi` manifest does NOT include `image` or
 `video`. The pi.dev gallery card shows just the package name
-(`@lyssom/pi-caduceus`), description, and keywords. Card looks
+(`pi-caduceus`), description, and keywords. Card looks
 bare next to gentle-pi's logo-bearing card, but this is the
 intentional brand-positioning move per `INIT.md §6`: the absence
 of decoration is the decoration.
@@ -301,7 +301,7 @@ spec, design, tasks, apply, verify, sync, and archive phases.
 ## 11. Rollback
 
 Caduceus is purely **additive** to a pi install. Removing the
-package (`pi remove npm:@lyssom/pi-caduceus`) reverts the
+package (`pi remove npm:pi-caduceus`) reverts the
 session to the un-injected system prompt. No data is written
 outside `~/.pi/agent/caduceus.json` and optional project
 `.caduceusrc`. Removing those two files is a full uninstall —
@@ -310,8 +310,8 @@ no leftover state.
 If a published v0.1.0 turns out to have a serious bug, the
 recovery path is:
 
-1. `pi remove npm:@lyssom/pi-caduceus`
-2. `npm unpublish @lyssom/pi-caduceus@0.1.0` (within npm's 72h
+1. `pi remove npm:pi-caduceus`
+2. `npm unpublish pi-caduceus@0.1.0` (within npm's 72h
    window — fail-closed after that)
 3. Publish `0.1.1` with the fix and a `CHANGELOG.md` entry
 4. Document the incident in a `docs/incidents/2026-01-caduceus-0.1.0.md`
@@ -324,9 +324,9 @@ clean up.
 
 1. `pnpm test` (or `node --experimental-strip-types --test
    tests/*.test.ts`) exits 0 on a clean checkout.
-2. `npm view @lyssom/pi-caduceus` resolves to this package after
+2. `npm view pi-caduceus` resolves to this package after
    publish.
-3. `pi install npm:@lyssom/pi-caduceus` registers the extension,
+3. `pi install npm:pi-caduceus` registers the extension,
    theme, and prompts from this package; `/caduceus:status`
    appears in the slash command list.
 4. All 6 non-negotiable invariants in `AGENTS.md §"Non-negotiable
@@ -347,16 +347,14 @@ clean up.
 These are explicitly the user's responsibility, not the
 `apply` or `verify` phase:
 
-1. **Create GitHub org `lyssom`** — `gh auth refresh -h github.com
-   -s admin:org`, then `gh api -X POST /user/orgs -f login=lyssom`
-   (or use the web UI).
-2. **Create the `pi-caduceus` repo under `lyssom`** — `gh repo
-   create lyssom/pi-caduceus --public --source=. --remote=origin`
-   after the first commit lands.
-3. **First `npm login --scope=lyssom`** — to enable publishing to
-   the `lyssom` scope.
-4. **Add `NPM_TOKEN` secret to GitHub** if a publish-via-CI
-   workflow is desired (optional for v0.1.0; can be manual
+1. **Create the `pi-caduceus` repo under the `lyssom` GitHub user
+   account** — `gh repo create lyssom/pi-caduceus --public
+   --source=. --remote=origin --push` (no org creation or
+   `admin:org` scope refresh needed; `lyssom` is an existing
+   GitHub user).
+2. **One-time `npm login`** (no `--scope` needed; package is unscoped
+   `pi-caduceus`).
+3. **`npm publish --access=public`** from the caduceus repo root.
    `npm publish` from a local machine).
 
 These do not block SDD completion. They block the

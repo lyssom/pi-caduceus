@@ -43,7 +43,7 @@ one of these requires an explicit proposal amendment.
    timestamps, no random IDs in the prompt segment).
 5. The `pi` manifest in `package.json` declares `extensions`, `themes`, and
    `prompts` paths; `keywords` includes `"pi-package"`.
-6. `npm view @lyssom/pi-caduceus` resolves to the same package before and
+6. `npm view pi-caduceus` resolves to the same package before and
    after the apply phase (no accidentally bumped scope).
 
 ## Strict TDD posture

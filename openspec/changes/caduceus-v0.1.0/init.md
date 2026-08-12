@@ -2,7 +2,7 @@
 
 > **Status:** Init complete. Awaiting `explore` phase.
 > **Date:** 2026-01
-> **Owner:** TBD (under `lyssom` org)
+> **Owner:** `lyssom` (GitHub user account; no separate org — revised post-apply)
 > **Source contract:** [`INIT.md`](../../../INIT.md)
 > **Project context:** [`openspec/AGENTS.md`](../../AGENTS.md)
 > **SDD config:** [`openspec/config.yaml`](../../config.yaml)
@@ -60,8 +60,8 @@ Explicitly **out** of scope (deferred to v0.2+):
 ## 4. Success criteria
 
 1. `pnpm test` exits 0 on a clean checkout.
-2. `npm view @lyssom/pi-caduceus` resolves to this package after publish.
-3. `pi install npm:@lyssom/pi-caduceus` registers the extension, theme,
+2. `npm view pi-caduceus` resolves to this package after publish.
+3. `pi install npm:pi-caduceus` registers the extension, theme,
    and prompts from this package.
 4. The persona invariants in `AGENTS.md §"Non-negotiable invariants"` are
    all asserted by the test suite.
@@ -87,8 +87,8 @@ Explicitly **out** of scope (deferred to v0.2+):
 
 | # | Question | Status | Resolution path |
 |---|---|---|---|
-| 1 | npm name | **RESOLVED** | `@lyssom/pi-caduceus` (B1) |
-| 2 | owner / org | **RESOLVED** | `lyssom` (B2, new org, user to create) |
+| 1 | npm name | **RESOLVED** | `pi-caduceus` (B1) |
+| 2 | owner / org | **RESOLVED** | `lyssom` (B2, **GitHub user account, no separate org** — revised after apply phase) |
 | 3 | GitHub repo name | **RESOLVED** | `lyssom/pi-caduceus` (B3, follows B1) |
 | 4 | LICENSE | **RESOLVED** | MIT (B4) |
 | 5 | Logo / banner assets | OPEN | Defer to v0.1.1 unless required for publish |
@@ -103,11 +103,7 @@ Explicitly **out** of scope (deferred to v0.2+):
   `extensions/extension-types.d.ts` before wiring `caduceus.ts`.
 - **R-2 (medium):** `pi-tui` peer for the status bar may not be
   re-exported as a peer; verify before adding the `status-bar.ts` task.
-- **R-3 (medium):** the `lyssom` GitHub org does not exist yet and the
-  active `gh` token lacks `admin:org` scope. Repository creation is
-  out-of-band for the SDD pipeline; user must run
-  `gh auth refresh -h github.com -s admin:org` and create the org before
-  publish.
+- **R-3 (RESOLVED post-apply):** Originally flagged the missing `lyssom` GitHub org and `admin:org` scope. **Revised after apply phase**: caduceus is published unscoped (`pi-caduceus`), no org needed. The repo lives under the existing `lyssom` GitHub user account, not a separate org. Out-of-band action simplified to `gh repo create lyssom/pi-caduceus --public` (no scope refresh required).
 - **R-4 (low):** `pnpm@11.1.1` may not be installed on the apply host;
   fall back to `npm` if `pnpm` is missing — but document the divergence.
 
