@@ -50,6 +50,14 @@ export type CommandDeps = {
   generateWizardContent: (input: { name: string; description: string; style: "concise" | "verbose" | "friendly" | "strict" | "custom" }) => string;
   wizardFilePath: (name: string, scope: "global" | "project", cwd: string) => string;
   writeAndLint: (path: string, content: string, name: string) => Promise<{ ok: boolean; filePath: string; issues: { severity: "error" | "warning"; message: string; check: string }[] }>;
+  // v0.2.0 additions (diff):
+  personaDiff: (input: {
+    leftName: string;
+    rightName: string;
+    mode: "gentleman" | "neutral" | "auto";
+    locale: string;
+    cwd: string;
+  }) => { ok: boolean; diff: string; leftName: string; rightName: string };
 };
 
 // ---------------------------------------------------------------------------
@@ -302,4 +310,50 @@ pi.registerCommand("caduceus:create", {
   },
 });
 
+
+// /caduceus:diff ----------------------------------------------------------
+pi.registerCommand("caduceus:diff", {
+  description: "Diff two personas. Usage: /caduceus:diff [a [b]] (defaults: a=active, b=gentleman).",
+  handler: async (args, ctx) => {
+    const tokens = args.trim().split(/\s+/).filter(Boolean);
+    const { config } = deps.readConfig(ctx.cwd);
+    const mode = config.mode;
+    const locale = config.locale;
+
+    let a: string, b: string;
+    if (tokens.length === 0) {
+      // 0 args: diff active persona vs gentleman
+      a = config.persona;
+      b = "gentleman";
+    } else if (tokens.length === 1) {
+      // 1 arg: diff <arg> vs active
+      a = tokens[0];
+      b = config.persona;
+    } else {
+      // 2 args: diff <a> vs <b>
+      a = tokens[0];
+      b = tokens[1];
+    }
+
+    try {
+      const result = deps.personaDiff({
+        leftName: a,
+        rightName: b,
+        mode,
+        locale,
+        cwd: ctx.cwd,
+      });
+      if (result.diff === "") {
+        ctx.ui.notify(`personas '${result.leftName}' and '${result.rightName}' are identical`, "info");
+      } else {
+        ctx.ui.notify(result.diff, "info");
+      }
+    } catch (err) {
+      ctx.ui.notify(
+        `diff failed: ${(err as Error).message}`,
+        "warning",
+      );
+    }
+  },
+});
 }

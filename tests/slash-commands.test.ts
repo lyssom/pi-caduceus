@@ -111,6 +111,13 @@ function makeMockDeps(overrides: Partial<CommandDeps> = {}): CommandDeps {
       filePath: path,
       issues: [],
     }),
+    // v0.2.0 diff:
+    personaDiff: (input) => ({
+      ok: true,
+      diff: `--- ${input.leftName}\n+++ ${input.rightName}\n@@ -1 +1 @@\n-diff\n+more diff\n`,
+      leftName: input.leftName,
+      rightName: input.rightName,
+    }),
     ...overrides,
   };
 }
@@ -269,7 +276,7 @@ test("R-CONFIG-010-1: registerSlashCommands does NOT touch the status bar (that'
   const { ctx, statusUpdates } = makeMockCtx();
   registerSlashCommands(pi, makeMockDeps());
 
-  // Run all 8 commands; none should call setStatus
+  // Run all 9 commands; none should call setStatus
   for (const cmdName of [
     "caduceus:status",
     "caduceus:mode",
@@ -279,6 +286,7 @@ test("R-CONFIG-010-1: registerSlashCommands does NOT touch the status bar (that'
     "caduceus:persona",
     "caduceus:lint",
     "caduceus:create",
+    "caduceus:diff",
   ]) {
     await pi.commands[cmdName].handler("", ctx);
   }
@@ -477,6 +485,99 @@ test("v0.2.0: /caduceus:create with whitespace-only description is captured corr
 
   await pi.commands["caduceus:create"].handler("wizard   Hello world", ctx);
   assert.equal(capturedDesc, "Hello world");
+});
+
+// ---------------------------------------------------------------------------
+// v0.2.0 — /caduceus:diff
+// ---------------------------------------------------------------------------
+
+test("v0.2.0: /caduceus:diff with no args diffs active vs gentleman", async () => {
+  const pi = makeMockPi();
+  const { ctx, notifications } = makeMockCtx();
+  let capturedLeft: string | null = null;
+  let capturedRight: string | null = null;
+  const deps = makeMockDeps({
+    personaDiff: (input) => {
+      capturedLeft = input.leftName;
+      capturedRight = input.rightName;
+      // Empty diff when a === b (which is the default case)
+      return {
+        ok: true,
+        diff: "",
+        leftName: input.leftName,
+        rightName: input.rightName,
+      };
+    },
+  });
+  registerSlashCommands(pi, deps);
+
+  await pi.commands["caduceus:diff"].handler("", ctx);
+
+  // Default config has persona: "gentleman", so a === b === "gentleman"
+  // which produces an empty diff. The slash command shows "identical".
+  assert.match(notifications[0].message, /identical/);
+});
+
+test("v0.2.0: /caduceus:diff pirate shows a real diff", async () => {
+  const pi = makeMockPi();
+  const { ctx, notifications } = makeMockCtx();
+  const deps = makeMockDeps({
+    personaDiff: (input) => ({
+      ok: true,
+      diff: "--- pirate\n+++ gentleman\n@@ -1 +1 @@\n-Arrr!\n+Yarr!\n",
+      leftName: "pirate",
+      rightName: "gentleman",
+    }),
+  });
+  registerSlashCommands(pi, deps);
+
+  await pi.commands["caduceus:diff"].handler("pirate", ctx);
+
+  assert.equal(notifications.length, 1);
+  assert.match(notifications[0].message, /--- pirate/);
+  assert.match(notifications[0].message, /\+\+\+ gentleman/);
+});
+
+test("v0.2.0: /caduceus:diff pirate concise (2 args) passes both names", async () => {
+  const pi = makeMockPi();
+  const { ctx, notifications } = makeMockCtx();
+  let capturedLeft: string | null = null;
+  let capturedRight: string | null = null;
+  const deps = makeMockDeps({
+    personaDiff: (input) => {
+      capturedLeft = input.leftName;
+      capturedRight = input.rightName;
+      return {
+        ok: true,
+        diff: "--- pirate\n+++ concise\n",
+        leftName: "pirate",
+        rightName: "concise",
+      };
+    },
+  });
+  registerSlashCommands(pi, deps);
+
+  await pi.commands["caduceus:diff"].handler("pirate concise", ctx);
+
+  assert.equal(capturedLeft, "pirate");
+  assert.equal(capturedRight, "concise");
+  assert.match(notifications[0].message, /--- pirate/);
+});
+
+test("v0.2.0: /caduceus:diff with non-existent persona shows error", async () => {
+  const pi = makeMockPi();
+  const { ctx, notifications } = makeMockCtx();
+  const deps = makeMockDeps({
+    personaDiff: () => {
+      throw new Error("CaduceusPersonaNotFoundError: nope");
+    },
+  });
+  registerSlashCommands(pi, deps);
+
+  await pi.commands["caduceus:diff"].handler("nope", ctx);
+
+  assert.match(notifications[0].message, /diff failed/);
+  assert.match(notifications[0].message, /nope/);
 });
 
 test("v0.2.0: /caduceus:create success path writes file and confirms", async () => {

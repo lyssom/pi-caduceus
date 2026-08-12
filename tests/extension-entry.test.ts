@@ -30,7 +30,7 @@ function makeMockPi() {
   };
 }
 
-test("extension registers session_start, before_agent_start, and 8 slash commands", () => {
+test("extension registers session_start, before_agent_start, and 9 slash commands", () => {
   const pi = makeMockPi();
   caduceus(pi as unknown as Parameters<typeof caduceus>[0]);
 
@@ -42,8 +42,8 @@ test("extension registers session_start, before_agent_start, and 8 slash command
   assert.ok(pi.handlers["before_agent_start"], "before_agent_start handler must be registered");
   assert.equal(pi.handlers["before_agent_start"].length, 1);
 
-  // 3. 8 slash commands (4 from v0.1.0 + 3 from v0.1.1 + 1 from v0.2.0)
-  assert.equal(Object.keys(pi.commands).length, 8, "exactly 8 commands must be registered");
+  // 3. 9 slash commands (4 from v0.1.0 + 3 from v0.1.1 + 2 from v0.2.0)
+  assert.equal(Object.keys(pi.commands).length, 9, "exactly 9 commands must be registered");
   for (const name of [
     "caduceus:status",
     "caduceus:mode",
@@ -53,6 +53,7 @@ test("extension registers session_start, before_agent_start, and 8 slash command
     "caduceus:persona",
     "caduceus:lint",
     "caduceus:create",
+    "caduceus:diff",
   ]) {
     assert.ok(pi.commands[name], `${name} must be registered`);
     assert.equal(typeof pi.commands[name].handler, "function");

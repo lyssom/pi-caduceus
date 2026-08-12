@@ -64,3 +64,22 @@ export function buildPersonaPrompt(
   const template = resolved === "neutral" ? NEUTRAL_PROMPT : GENTLEMAN_PROMPT;
   return template.split(MODE_PLACEHOLDER).join(resolved);
 }
+
+/**
+ * Render a persona from arbitrary markdown content. Pure function: no
+ * I/O, no side effects. Substitutes the `${mode}` placeholder with the
+ * resolved mode and (optionally) appends a language clause.
+ *
+ * The mode argument is passed for API symmetry with `buildPersonaPrompt`;
+ * the actual mode substitution uses it. The locale is currently unused
+ * here (the language clause is appended by the extension entry, not
+ * this function) but is part of the signature for forward compat.
+ */
+export function buildPersonaPromptFromContent(
+  content: string,
+  mode: string,
+  _locale: string,
+): string {
+  const resolved = resolveMode(mode);
+  return content.split(MODE_PLACEHOLDER).join(resolved);
+}

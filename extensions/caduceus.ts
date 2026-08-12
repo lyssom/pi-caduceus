@@ -36,6 +36,7 @@ import {
   type LoadedPersona,
 } from "../lib/persona-loader.ts";
 import { lintPersonaContent } from "../lib/lint.ts";
+import { personaDiff } from "../lib/diff.ts";
 import {
   validateStep as validateWizardStep,
   generatePersonaContent as generateWizardContent,
@@ -190,6 +191,8 @@ export default function caduceus(pi: ExtensionAPI): void {
     generateWizardContent,
     wizardFilePath,
     writeAndLint,
+    // v0.2.0 diff:
+    personaDiff,
   });
 }
 
