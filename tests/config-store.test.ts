@@ -232,6 +232,8 @@ test("R-CONFIG-005-2: writeGlobalConfigField updates only the specified field", 
         locale: "auto",
         showStatusBar: false,
         allowProjectOverride: true,
+        systemPromptMode: "append",
+        persona: "gentleman",
       }),
     );
 
@@ -240,6 +242,95 @@ test("R-CONFIG-005-2: writeGlobalConfigField updates only the specified field", 
     const { config } = readConfig({ cwd: home, home: agentDir });
     assert.equal(config.mode, "neutral");
     assert.equal(config.locale, "auto"); // unchanged
+  } finally {
+    cleanup(home);
+  }
+});
+
+// ---------------------------------------------------------------------------
+// v0.1.1 — new config fields: systemPromptMode, persona
+// ---------------------------------------------------------------------------
+
+test("v0.1.1: DEFAULT_CONFIG has the new fields with backward-compatible defaults", () => {
+  assert.equal(DEFAULT_CONFIG.systemPromptMode, "append");
+  assert.equal(DEFAULT_CONFIG.persona, "gentleman");
+});
+
+test("v0.1.1: a caduceus.json WITHOUT the new fields still works (backward compat)", () => {
+  const home = makeTempHome();
+  try {
+    const agentDir = join(home, "agent");
+    mkdirSync(agentDir, { recursive: true });
+    // Old-format config — only the 4 original fields
+    writeFileSync(
+      join(agentDir, "caduceus.json"),
+      JSON.stringify({ mode: "gentleman", locale: "auto" }),
+    );
+
+    const { config } = readConfig({ cwd: home, home: agentDir });
+    assert.equal(config.systemPromptMode, "append"); // default
+    assert.equal(config.persona, "gentleman");       // default
+  } finally {
+    cleanup(home);
+  }
+});
+
+test("v0.1.1: a caduceus.json WITH the new fields is read correctly", () => {
+  const home = makeTempHome();
+  try {
+    const agentDir = join(home, "agent");
+    mkdirSync(agentDir, { recursive: true });
+    writeFileSync(
+      join(agentDir, "caduceus.json"),
+      JSON.stringify({
+        mode: "neutral",
+        locale: "es-ES",
+        systemPromptMode: "replace",
+        persona: "concise",
+      }),
+    );
+
+    const { config } = readConfig({ cwd: home, home: agentDir });
+    assert.equal(config.systemPromptMode, "replace");
+    assert.equal(config.persona, "concise");
+  } finally {
+    cleanup(home);
+  }
+});
+
+test("v0.1.1: writeGlobalConfigField can update systemPromptMode", async () => {
+  const home = makeTempHome();
+  try {
+    const agentDir = join(home, "agent");
+    mkdirSync(agentDir, { recursive: true });
+    writeFileSync(
+      join(agentDir, "caduceus.json"),
+      JSON.stringify(DEFAULT_CONFIG),
+    );
+
+    await writeGlobalConfigField("systemPromptMode", "replace", { home: agentDir });
+
+    const { config } = readConfig({ cwd: home, home: agentDir });
+    assert.equal(config.systemPromptMode, "replace");
+  } finally {
+    cleanup(home);
+  }
+});
+
+test("v0.1.1: writeGlobalConfigField can update persona", async () => {
+  const home = makeTempHome();
+  try {
+    const agentDir = join(home, "agent");
+    mkdirSync(agentDir, { recursive: true });
+    writeFileSync(
+      join(agentDir, "caduceus.json"),
+      JSON.stringify(DEFAULT_CONFIG),
+    );
+
+    await writeGlobalConfigField("persona", "reviewer", { home: agentDir });
+
+    const { config } = readConfig({ cwd: home, home: agentDir });
+    assert.equal(config.persona, "reviewer");
   } finally {
     cleanup(home);
   }

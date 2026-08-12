@@ -25,11 +25,15 @@ import { CaduceusConfigError } from "./errors.ts";
 
 export type PersonaMode = "gentleman" | "neutral" | "auto";
 export type LocalePreference = "auto" | string;
+export type SystemPromptMode = "append" | "replace";
+export type PersonaName = string;
 export type CaduceusConfig = {
   mode: PersonaMode;
   locale: LocalePreference;
   showStatusBar: boolean;
   allowProjectOverride: boolean;
+  systemPromptMode: SystemPromptMode;
+  persona: PersonaName;
 };
 export type ConfigSource =
   | "built-in defaults"
@@ -46,6 +50,8 @@ export const DEFAULT_CONFIG: CaduceusConfig = {
   locale: "auto",
   showStatusBar: false,
   allowProjectOverride: true,
+  systemPromptMode: "append",
+  persona: "gentleman",
 };
 
 export type ConfigDeps = {
