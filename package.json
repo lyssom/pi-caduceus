@@ -1,0 +1,44 @@
+{
+  "name": "@lyssom/pi-caduceus",
+  "version": "0.1.0",
+  "description": "Persona Contract package for pi. Injects a deterministic, testable, line-citable persona prompt segment before the first token of a pi session, given (mode, locale).",
+  "type": "module",
+  "license": "MIT",
+  "keywords": [
+    "pi-package",
+    "pi",
+    "pi-coding-agent",
+    "caduceus",
+    "persona",
+    "prompt-orchestration",
+    "persona-contract"
+  ],
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*"
+  },
+  "peerDependenciesMeta": {
+    "@earendil-works/pi-coding-agent": {
+      "optional": true
+    }
+  },
+  "pi": {
+    "extensions": ["./extensions"],
+    "themes":     ["./themes"],
+    "prompts":    ["./prompts"]
+  },
+  "files": [
+    "extensions/",
+    "lib/",
+    "prompts/",
+    "themes/",
+    "tests/",
+    "scripts/",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "test": "node --experimental-strip-types --test tests/*.test.ts",
+    "verify": "node scripts/verify-package.mjs",
+    "prepack": "node scripts/verify-package.mjs"
+  }
+}
