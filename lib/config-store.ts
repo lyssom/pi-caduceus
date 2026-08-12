@@ -6,7 +6,7 @@
 //   - readConfig(deps): merge global ~/.pi/agent/caduceus.json + project
 //     .caduceusrc (when allowProjectOverride) + built-in defaults.
 //   - writeGlobalConfig(config, deps): atomic write via tmp+rename.
-//   - updateGlobalConfigField(field, value, deps): read-modify-write one field.
+//   - writeGlobalConfigField(field, value, deps): read-modify-write one field.
 //   - parseJsonc(input): JSONC-tolerant parser (line + block comments),
 //     preserves '//' inside string values via a state machine.
 // ---------------------------------------------------------------------------
@@ -214,7 +214,7 @@ export async function writeGlobalConfig(
 
 // Update a single field of the global config (read-modify-write). Reads
 // the current effective config, applies the change, writes atomically.
-export async function updateGlobalConfigField<K extends keyof CaduceusConfig>(
+export async function writeGlobalConfigField<K extends keyof CaduceusConfig>(
   field: K,
   value: CaduceusConfig[K],
   deps: { home?: string; cwd?: string } = {},

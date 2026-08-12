@@ -27,7 +27,7 @@ import { join } from "node:path";
 import {
   readConfig,
   writeGlobalConfig,
-  updateGlobalConfigField,
+  writeGlobalConfigField,
   parseJsonc,
   DEFAULT_CONFIG,
 } from "../lib/config-store.ts";
@@ -218,7 +218,7 @@ test("R-CONFIG-005-1: writeGlobalConfig creates file with full content, no lefto
   }
 });
 
-test("R-CONFIG-005-2: updateGlobalConfigField updates only the specified field", async () => {
+test("R-CONFIG-005-2: writeGlobalConfigField updates only the specified field", async () => {
   const home = makeTempHome();
   try {
     const agentDir = join(home, "agent");
@@ -235,7 +235,7 @@ test("R-CONFIG-005-2: updateGlobalConfigField updates only the specified field",
       }),
     );
 
-    await updateGlobalConfigField("mode", "neutral", { home: agentDir });
+    await writeGlobalConfigField("mode", "neutral", { home: agentDir });
 
     const { config } = readConfig({ cwd: home, home: agentDir });
     assert.equal(config.mode, "neutral");
