@@ -38,7 +38,7 @@ const PLAIN_PROMPT = readFileSync(
 );
 
 /**
- * Resolve a mode string. `"auto"` maps to `"gentleman"`.
+ * Resolve a mode string. `"auto"` maps to `"default"`.
  */
 function resolveMode(mode: string): "default" | "plain" {
   if (mode === "auto") return "default";

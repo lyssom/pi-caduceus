@@ -139,7 +139,22 @@ export function registerSlashCommands(
   pi.registerCommand("caduceus:mode", {
     description: "Set the persona mode: default | plain | auto.",
     handler: async (args: string, ctx: ExtensionCommandContext) => {
-      const value = args.trim();
+      let value = args.trim();
+      // v0.3.0: deprecation handling. Old names "gentleman" and "neutral"
+      // are mapped to "default" and "plain" with a one-time warn.
+      if (value === "gentleman") {
+        ctx.ui.notify(
+          `caduceus: mode "gentleman" is deprecated; using "default" instead.`,
+          "warning",
+        );
+        value = "default";
+      } else if (value === "neutral") {
+        ctx.ui.notify(
+          `caduceus: mode "neutral" is deprecated; using "plain" instead.`,
+          "warning",
+        );
+        value = "plain";
+      }
       if (!isValidMode(value)) {
         ctx.ui.notify(
           `usage: /caduceus:mode <default|plain|auto> (got "${args}")`,
@@ -205,7 +220,21 @@ export function registerSlashCommands(
   pi.registerCommand("caduceus:persona", {
     description: "Switch persona (<name>) or list all available (list).",
     handler: async (args: string, ctx: ExtensionCommandContext) => {
-      const value = args.trim();
+      let value = args.trim();
+      // v0.3.0: deprecation handling for old persona names
+      if (value === "gentleman") {
+        ctx.ui.notify(
+          `caduceus: persona "gentleman" is deprecated; using "default" instead.`,
+          "warning",
+        );
+        value = "default";
+      } else if (value === "neutral") {
+        ctx.ui.notify(
+          `caduceus: persona "neutral" is deprecated; using "plain" instead.`,
+          "warning",
+        );
+        value = "plain";
+      }
       if (value === "list") {
         const names = deps.listPersonas(ctx.cwd);
         const lines = ["available personas:", ...names.map((n) => `  - ${n}`)];

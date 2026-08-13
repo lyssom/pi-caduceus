@@ -622,3 +622,93 @@ test("v0.2.0: /caduceus:create with lint failure does NOT write the file", async
   assert.match(notifications[0].message, /lint FAILED/);
   assert.match(notifications[0].message, /file NOT written/);
 });
+
+
+// ---------------------------------------------------------------------------
+// v0.3.0 — deprecation handling for old names (gentleman, neutral)
+// ---------------------------------------------------------------------------
+
+test("v0.3.0: /caduceus:mode gentleman is deprecated and maps to default", async () => {
+  const pi = makeMockPi();
+  const { ctx, notifications } = makeMockCtx();
+  const writes: Array<{ field: string; value: unknown }> = [];
+  const deps = makeMockDeps({
+    writeGlobalConfigField: async (field, value) => {
+      writes.push({ field: String(field), value });
+    },
+  });
+  registerSlashCommands(pi, deps);
+
+  await pi.commands["caduceus:mode"].handler("gentleman", ctx);
+
+  // Deprecation warning is sent
+  assert.match(notifications[0].message, /deprecated/);
+  assert.match(notifications[0].message, /default/);
+  // And the write uses the new name
+  assert.equal(writes.length, 1);
+  assert.equal(writes[0].value, "default");
+  // Confirmation message uses the new name
+  assert.match(notifications[1].message, /mode set to default/);
+});
+
+test("v0.3.0: /caduceus:mode neutral is deprecated and maps to plain", async () => {
+  const pi = makeMockPi();
+  const { ctx, notifications } = makeMockCtx();
+  const writes: Array<{ field: string; value: unknown }> = [];
+  const deps = makeMockDeps({
+    writeGlobalConfigField: async (field, value) => {
+      writes.push({ field: String(field), value });
+    },
+  });
+  registerSlashCommands(pi, deps);
+
+  await pi.commands["caduceus:mode"].handler("neutral", ctx);
+
+  assert.match(notifications[0].message, /deprecated/);
+  assert.match(notifications[0].message, /plain/);
+  assert.equal(writes[0].value, "plain");
+  assert.match(notifications[1].message, /mode set to plain/);
+});
+
+test("v0.3.0: /caduceus:persona gentleman is deprecated and maps to default", async () => {
+  const pi = makeMockPi();
+  const { ctx, notifications } = makeMockCtx();
+  const writes: Array<{ field: string; value: unknown }> = [];
+  const deps = makeMockDeps({
+    writeGlobalConfigField: async (field, value) => {
+      writes.push({ field: String(field), value });
+    },
+    switchPersona: async (name) => {
+      writes.push({ field: "persona", value: name });
+    },
+  });
+  registerSlashCommands(pi, deps);
+
+  await pi.commands["caduceus:persona"].handler("gentleman", ctx);
+
+  assert.match(notifications[0].message, /deprecated/);
+  assert.match(notifications[0].message, /default/);
+  // The switchPersona dep was called with the new name
+  assert.equal(writes.find((w) => w.field === "persona")?.value, "default");
+});
+
+test("v0.3.0: /caduceus:persona neutral is deprecated and maps to plain", async () => {
+  const pi = makeMockPi();
+  const { ctx, notifications } = makeMockCtx();
+  const writes: Array<{ field: string; value: unknown }> = [];
+  const deps = makeMockDeps({
+    writeGlobalConfigField: async (field, value) => {
+      writes.push({ field: String(field), value });
+    },
+    switchPersona: async (name) => {
+      writes.push({ field: "persona", value: name });
+    },
+  });
+  registerSlashCommands(pi, deps);
+
+  await pi.commands["caduceus:persona"].handler("neutral", ctx);
+
+  assert.match(notifications[0].message, /deprecated/);
+  assert.match(notifications[0].message, /plain/);
+  assert.equal(writes.find((w) => w.field === "persona")?.value, "plain");
+});
