@@ -2,6 +2,26 @@
 
 All notable changes to **caduceus** are documented here.
 
+## [0.3.1] - 2026-08-12
+
+### Fixed
+
+- **`/caduceus:mode` and `/caduceus:persona` accept old names** with a
+  one-time deprecation warning. Previously, typing
+  `/caduceus:mode gentleman` was rejected with a usage hint. Now it
+  emits `caduceus: mode "gentleman" is deprecated; using "default"
+  instead.` and proceeds with the new name. Same for `neutral` →
+  `plain` (mode) and `gentleman` → `default` / `neutral` → `plain`
+  (persona).
+- **Stale docstring** in `lib/persona-contract.ts`: removed the
+  `// auto maps to "gentleman"` reference (v0.3.0 maps auto to
+  `default`).
+
+### Test count
+
+- v0.3.0: 152 tests
+- v0.3.1: 156 tests (+4 deprecation tests)
+
 ## [0.3.0] - 2026-08-12 — Brand Independence (BREAKING)
 
 ### Migration
