@@ -107,8 +107,8 @@ test("before_agent_start handler returns { systemPrompt: <original> + <persona> 
   assert.ok(result && typeof result === "object");
   const sysPrompt = (result as { systemPrompt: string }).systemPrompt;
   assert.ok(sysPrompt.startsWith("BASE_SYSTEM\n\n"), "systemPrompt must start with original + '\\n\\n'");
-  assert.match(sysPrompt, /Current persona mode: gentleman/);
-  assert.match(sysPrompt, /Rioplatense Spanish with voseo/);
+  assert.match(sysPrompt, /Current persona mode: default/);
+  assert.match(sysPrompt, /caduceus Identity Contract/);
 });
 
 test("v0.1.1: before_agent_start with systemPromptMode='replace' returns persona only (no base prefix)", async () => {
@@ -138,5 +138,5 @@ test("v0.1.1: before_agent_start with systemPromptMode='replace' returns persona
 
   const sysPrompt = (result as { systemPrompt: string }).systemPrompt;
   assert.ok(!sysPrompt.includes("BASE_SYSTEM_SHOULD_NOT_APPEAR"), "replace mode must omit the base");
-  assert.match(sysPrompt, /Current persona mode: gentleman/);
+  assert.match(sysPrompt, /Current persona mode: default/);
 });

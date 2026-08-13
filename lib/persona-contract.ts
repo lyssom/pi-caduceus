@@ -8,9 +8,9 @@
 // actual mode at call time.
 //
 // Per DNA-2 (INIT.md §4), every line in the rendered output is traceable:
-//   - ## el Gentleman Identity and Harness (file header)
+//   - ## caduceus Identity Contract (file header)
 //   - Current persona mode: <mode>      (substituted at runtime)
-//   - You are el Gentleman: ...          (file body)
+//   - You are running under **caduceus**...          (file body)
 //   - ## Identity contract              (file body)
 //   - ## Persona                        (file body, byte-for-byte from gentle-pi)
 //   - ## Harness principles             (file body)
@@ -28,23 +28,23 @@ const repoRoot = join(here, "..");
 
 const MODE_PLACEHOLDER = "${mode}";
 
-const GENTLEMAN_PROMPT = readFileSync(
-  join(repoRoot, "prompts", "gentleman.md"),
+const DEFAULT_PROMPT = readFileSync(
+  join(repoRoot, "prompts", "default.md"),
   "utf8",
 );
-const NEUTRAL_PROMPT = readFileSync(
-  join(repoRoot, "prompts", "neutral.md"),
+const PLAIN_PROMPT = readFileSync(
+  join(repoRoot, "prompts", "plain.md"),
   "utf8",
 );
 
 /**
  * Resolve a mode string. `"auto"` maps to `"gentleman"`.
  */
-function resolveMode(mode: string): "gentleman" | "neutral" {
-  if (mode === "auto") return "gentleman";
-  if (mode === "gentleman" || mode === "neutral") return mode;
-  // Defensive: unknown modes fall back to gentleman (R-PERSONA-001-3 spirit).
-  return "gentleman";
+function resolveMode(mode: string): "default" | "plain" {
+  if (mode === "auto") return "default";
+  if (mode === "default" || mode === "plain") return mode;
+  // Defensive: unknown modes fall back to default.
+  return "default";
 }
 
 /**
@@ -61,7 +61,7 @@ export function buildPersonaPrompt(
   _locale: string,
 ): string {
   const resolved = resolveMode(mode);
-  const template = resolved === "neutral" ? NEUTRAL_PROMPT : GENTLEMAN_PROMPT;
+  const template = resolved === "plain" ? PLAIN_PROMPT : DEFAULT_PROMPT;
   return template.split(MODE_PLACEHOLDER).join(resolved);
 }
 

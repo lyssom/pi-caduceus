@@ -81,7 +81,7 @@ function makeMockDeps(overrides: Partial<CommandDeps> = {}): CommandDeps {
     renderInspectOutput: (mode, locale) =>
       `[inspect] ${mode}/${locale}\n[inspect line 2]`,
     // v0.1.1 additions:
-    listPersonas: () => ["gentleman", "neutral", "concise", "reviewer"],
+    listPersonas: () => ["default", "plain", "concise", "reviewer"],
     switchPersona: async (name) => {
       writes.push({ field: "persona", value: name });
     },
@@ -89,7 +89,7 @@ function makeMockDeps(overrides: Partial<CommandDeps> = {}): CommandDeps {
       writes.push({ field: "systemPromptMode", value: mode });
     },
     lintActivePersona: () => ({ passed: true, issues: [] }),
-    getActivePersonaName: () => "gentleman",
+    getActivePersonaName: () => "default",
     // v0.2.0 additions:
     validateWizardStep: (step, value) => {
       if (step === "name" && /^[a-z0-9_-]+$/.test(value)) {
@@ -135,7 +135,7 @@ test("R-CONFIG-006-1: /caduceus:status shows effective config and source", async
 
   assert.equal(notifications.length, 1);
   const msg = notifications[0].message;
-  assert.match(msg, /mode: gentleman/);
+  assert.match(msg, /mode: default/);
   assert.match(msg, /locale: auto/);
   assert.match(msg, /showStatusBar: false/);
   assert.match(msg, /source: built-in defaults/);
@@ -145,7 +145,7 @@ test("R-CONFIG-006-1: /caduceus:status shows effective config and source", async
 // R-CONFIG-007 — /caduceus:mode
 // ---------------------------------------------------------------------------
 
-test("R-CONFIG-007-1: /caduceus:mode neutral persists the change and confirms", async () => {
+test("R-CONFIG-007-1: /caduceus:mode plain persists the change and confirms", async () => {
   const pi = makeMockPi();
   const { ctx, notifications } = makeMockCtx();
   const writes: Array<{ field: string; value: unknown }> = [];
@@ -156,13 +156,13 @@ test("R-CONFIG-007-1: /caduceus:mode neutral persists the change and confirms", 
   });
   registerSlashCommands(pi, deps);
 
-  await pi.commands["caduceus:mode"].handler("neutral", ctx);
+  await pi.commands["caduceus:mode"].handler("plain", ctx);
 
   assert.equal(writes.length, 1);
   assert.equal(writes[0].field, "mode");
-  assert.equal(writes[0].value, "neutral");
+  assert.equal(writes[0].value, "plain");
   assert.equal(notifications.length, 1);
-  assert.match(notifications[0].message, /mode set to neutral/);
+  assert.match(notifications[0].message, /mode set to plain/);
 });
 
 test("R-CONFIG-007-2: /caduceus:mode pirate shows usage hint, no write", async () => {
@@ -239,7 +239,7 @@ test("R-CONFIG-009-1: /caduceus:inspect shows the rendered persona prompt with m
 
   assert.equal(notifications.length, 1);
   const msg = notifications[0].message;
-  assert.match(msg, /rendered for gentleman\/auto/);
+  assert.match(msg, /rendered for default\/auto/);
   assert.match(msg, /with source annotations/);
 });
 
@@ -338,7 +338,7 @@ test("v0.1.1: /caduceus:persona list shows all available", async () => {
   const pi = makeMockPi();
   const { ctx, notifications } = makeMockCtx();
   const deps = makeMockDeps({
-    listPersonas: () => ["gentleman", "neutral", "concise", "reviewer", "pirate"],
+    listPersonas: () => ["default", "plain", "concise", "reviewer", "teacher", "security", "debugger", "socratic", "architect", "pirate"],
   });
   registerSlashCommands(pi, deps);
 
@@ -346,8 +346,8 @@ test("v0.1.1: /caduceus:persona list shows all available", async () => {
 
   assert.equal(notifications.length, 1);
   const msg = notifications[0].message;
-  assert.match(msg, /gentleman/);
-  assert.match(msg, /neutral/);
+  assert.match(msg, /default/);
+  assert.match(msg, /plain/);
   assert.match(msg, /concise/);
   assert.match(msg, /reviewer/);
   assert.match(msg, /pirate/);
@@ -392,7 +392,7 @@ test("v0.1.1: /caduceus:lint pass shows 'OK'", async () => {
   const { ctx, notifications } = makeMockCtx();
   const deps = makeMockDeps({
     lintActivePersona: () => ({ passed: true, issues: [] }),
-    getActivePersonaName: () => "gentleman",
+    getActivePersonaName: () => "default",
   });
   registerSlashCommands(pi, deps);
 
@@ -400,7 +400,7 @@ test("v0.1.1: /caduceus:lint pass shows 'OK'", async () => {
 
   assert.equal(notifications.length, 1);
   assert.match(notifications[0].message, /OK/);
-  assert.match(notifications[0].message, /gentleman/);
+  assert.match(notifications[0].message, /default/);
 });
 
 test("v0.1.1: /caduceus:lint fail shows issues (as warning type, since issues are user-actionable)", async () => {
@@ -491,7 +491,7 @@ test("v0.2.0: /caduceus:create with whitespace-only description is captured corr
 // v0.2.0 — /caduceus:diff
 // ---------------------------------------------------------------------------
 
-test("v0.2.0: /caduceus:diff with no args diffs active vs gentleman", async () => {
+test("v0.3.0: /caduceus:diff with no args diffs active vs default", async () => {
   const pi = makeMockPi();
   const { ctx, notifications } = makeMockCtx();
   let capturedLeft: string | null = null;
@@ -513,7 +513,7 @@ test("v0.2.0: /caduceus:diff with no args diffs active vs gentleman", async () =
 
   await pi.commands["caduceus:diff"].handler("", ctx);
 
-  // Default config has persona: "gentleman", so a === b === "gentleman"
+  // Default config has persona: "default", so a === b === "default"
   // which produces an empty diff. The slash command shows "identical".
   assert.match(notifications[0].message, /identical/);
 });
@@ -524,9 +524,9 @@ test("v0.2.0: /caduceus:diff pirate shows a real diff", async () => {
   const deps = makeMockDeps({
     personaDiff: (input) => ({
       ok: true,
-      diff: "--- pirate\n+++ gentleman\n@@ -1 +1 @@\n-Arrr!\n+Yarr!\n",
+      diff: "--- pirate\n+++ default\n@@ -1 +1 @@\n-Arrr!\n+Yarr!\n",
       leftName: "pirate",
-      rightName: "gentleman",
+      rightName: "default",
     }),
   });
   registerSlashCommands(pi, deps);
@@ -535,7 +535,7 @@ test("v0.2.0: /caduceus:diff pirate shows a real diff", async () => {
 
   assert.equal(notifications.length, 1);
   assert.match(notifications[0].message, /--- pirate/);
-  assert.match(notifications[0].message, /\+\+\+ gentleman/);
+  assert.match(notifications[0].message, /\+\+\+ default/);
 });
 
 test("v0.2.0: /caduceus:diff pirate concise (2 args) passes both names", async () => {

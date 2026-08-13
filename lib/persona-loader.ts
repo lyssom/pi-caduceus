@@ -40,9 +40,11 @@ export type LoadedPersona = {
 
 // Built-in persona names. The set is closed — adding a new built-in
 // requires updating this set AND adding the corresponding prompt file.
+// v0.3.0: removed "gentleman" and "neutral" (caduceus-original
+// replacements are "default" and "plain").
 const BUILT_IN_PERSONAS: ReadonlySet<PersonaName> = new Set([
-  "gentleman",
-  "neutral",
+  "default",
+  "plain",
   "concise",
   "reviewer",
   "teacher",

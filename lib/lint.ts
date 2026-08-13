@@ -25,9 +25,7 @@ export type LintIssue = {
   check: LintCheckId;
 };
 export type LintCheckId =
-  | "CROSS_MODE_LEAK_GENTLEMAN"
-  | "CROSS_MODE_LEAK_NEUTRAL"
-  | "VOSE_CONDITIONAL"
+  | "CONFLICTING_VOICE_MARKERS"
   | "IDENTITY_BLOCK"
   | "PERSONA_BLOCK"
   | "PRINCIPLES_BLOCK"
@@ -89,36 +87,6 @@ const hasModePlaceholder: CheckFn = (content) => {
   return null;
 };
 
-const checkCrossModeLeakGentleman: CheckFn = (content, name) => {
-  // "Do NOT use voseo" is the neutral persona's signature phrase.
-  // Only the neutral persona may contain it; any other persona is
-  // leaking the neutral clause.
-  if (name === "neutral") return null;
-  if (content.includes("Do NOT use voseo")) {
-    return {
-      severity: "error",
-      check: "CROSS_MODE_LEAK_GENTLEMAN",
-      message: `Persona '${name}' must not contain 'Do NOT use voseo' (that's the neutral clause).`,
-    };
-  }
-  return null;
-};
-
-const checkCrossModeLeakNeutral: CheckFn = (content, name) => {
-  // "natural Rioplatense Spanish with voseo" is the gentleman persona's
-  // signature phrase. Only the gentleman persona may contain it; any
-  // other persona is leaking the gentleman clause.
-  if (name === "gentleman") return null;
-  if (content.includes("natural Rioplatense Spanish with voseo")) {
-    return {
-      severity: "error",
-      check: "CROSS_MODE_LEAK_NEUTRAL",
-      message: `Persona '${name}' must not contain 'natural Rioplatense Spanish with voseo' (that's the gentleman clause).`,
-    };
-  }
-  return null;
-};
-
 const checkNoTimestamp: CheckFn = (content) => {
   // ISO date pattern: YYYY-MM-DD
   if (/\b\d{4}-\d{2}-\d{2}\b/.test(content)) {
@@ -139,27 +107,52 @@ const checkNoTimestamp: CheckFn = (content) => {
   return null;
 };
 
-const checkVoseConditional: CheckFn = (content, name) => {
-  // Heuristic: voseo/do-not-voseo references should be inside a
-  // "When the user writes Spanish..." conditional sentence.
-  // If found bare, warn.
-  const hasVoseo = /voseo/i.test(content);
-  if (!hasVoseo) return null;
+// v0.3.0: new lint check. Replaces the v0.2.0 cross-mode leak checks.
+// Detects personas that try to be both "concise" and "verbose" in the
+// same block — a recipe for model confusion.
+const CONCISE_MARKERS = [
+  "1-3 sentences",
+  "brief",
+  "concise",
+  "minimal",
+  "no preamble",
+  "no postscript",
+  "short",
+];
+const VERBOSE_MARKERS = [
+  "thorough",
+  "in detail",
+  "show your reasoning",
+  "explain tradeoffs",
+  "step by step",
+  "elaborate",
+  "show the code",
+];
 
-  // Check for the canonical conditional phrasing
-  const hasConditional =
-    /when the user writes spanish/i.test(content) ||
-    /if the user writes spanish/i.test(content);
+const checkConflictingVoiceMarkers: CheckFn = (content) => {
+  // Only look inside the Persona block (between "## Persona" and the next "## ").
+  const personaMatch = content.match(/^## Persona\s*\n([\s\S]*?)\n## /m);
+  if (!personaMatch) return null; // PERSONA_BLOCK check handles missing
+  const personaBlock = personaMatch[1];
 
-  if (hasConditional) return null;
+  const conciseHits = CONCISE_MARKERS.filter((m) =>
+    personaBlock.toLowerCase().includes(m.toLowerCase()),
+  );
+  const verboseHits = VERBOSE_MARKERS.filter((m) =>
+    personaBlock.toLowerCase().includes(m.toLowerCase()),
+  );
 
-  return {
-    severity: "warning",
-    check: "VOSE_CONDITIONAL",
-    message:
-      `Voseo reference found but no "When the user writes Spanish..." conditional. ` +
-      `Consider wrapping voseo clauses in a conditional so English-only users aren't confused.`,
-  };
+  if (conciseHits.length >= 1 && verboseHits.length >= 1) {
+    return {
+      severity: "warning",
+      check: "CONFLICTING_VOICE_MARKERS",
+      message:
+        `Persona block contains both concise and verbose markers ` +
+        `(concise: ${conciseHits.join(", ")}; verbose: ${verboseHits.join(", ")}). ` +
+        `Pick a direction; ambiguity confuses the model.`,
+    };
+  }
+  return null;
 };
 
 // ---------------------------------------------------------------------------
@@ -171,10 +164,8 @@ const ALL_CHECKS: ReadonlyArray<CheckFn> = [
   hasPersonaBlock,
   hasPrinciplesBlock,
   hasModePlaceholder,
-  checkCrossModeLeakGentleman,
-  checkCrossModeLeakNeutral,
   checkNoTimestamp,
-  checkVoseConditional,
+  checkConflictingVoiceMarkers,
 ];
 
 // ---------------------------------------------------------------------------

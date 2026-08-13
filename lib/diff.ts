@@ -12,7 +12,6 @@
 
 import { loadPersona, type PersonaName } from "./persona-loader.ts";
 import { buildPersonaPromptFromContent } from "./persona-contract.ts";
-import { languageClause } from "./language-clause.ts";
 import { detectLocale, type ResolvedLocale } from "./locale-detect.ts";
 import type { PersonaMode } from "./config-store.ts";
 import { CaduceusPersonaNotFoundError } from "./errors.ts";
@@ -177,13 +176,13 @@ export function personaDiff(input: DiffInput): DiffOutput {
   }
 
   // 2. Resolve mode
-  const mode: PersonaMode = input.mode === "neutral" ? "neutral" : "gentleman";
+  const mode: PersonaMode = input.mode === "plain" ? "plain" : "default";
 
   // 3. Resolve locale (re-detect from a hint or use the input locale)
   // For diff, we use the input locale directly (no text to detect from).
   const locale: ResolvedLocale = input.locale;
 
-  // 4. Render both
+  // 4. Render both (v0.3.0: no language clause; just substitute ${mode})
   const leftRendered = buildPersonaPromptFromContent(left.content, mode, locale);
   const rightRendered = buildPersonaPromptFromContent(right.content, mode, locale);
 

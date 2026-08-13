@@ -76,28 +76,27 @@ check("themes/caduceus.json exists and parses", () => {
   }
 });
 
-check("prompts/gentleman.md exists", () => {
-  const path = join(root, "prompts", "gentleman.md");
+check("prompts/default.md exists", () => {
+  const path = join(root, "prompts", "default.md");
   if (!existsSync(path)) {
-    fail("prompts/gentleman.md exists", "file is missing");
+    fail("prompts/default.md exists", "file is missing");
     return;
   }
-  pass("prompts/gentleman.md exists");
+  pass("prompts/default.md exists");
 });
 
-check("prompts/neutral.md exists", () => {
-  const path = join(root, "prompts", "neutral.md");
+check("prompts/plain.md exists", () => {
+  const path = join(root, "prompts", "plain.md");
   if (!existsSync(path)) {
-    fail("prompts/neutral.md exists", "file is missing");
+    fail("prompts/plain.md exists", "file is missing");
     return;
   }
-  pass("prompts/neutral.md exists");
+  pass("prompts/plain.md exists");
 });
 
-check("test files exist (11 expected)", () => {
+check("test files exist (10 expected)", () => {
   const expected = [
     "tests/persona-contract.test.ts",
-    "tests/language-clause.test.ts",
     "tests/locale-detect.test.ts",
     "tests/config-store.test.ts",
     "tests/slash-commands.test.ts",
@@ -108,6 +107,8 @@ check("test files exist (11 expected)", () => {
     "tests/wizard.test.ts",
     "tests/diff.test.ts",
   ];
+  // v0.3.0: removed tests/language-clause.test.ts (lib/language-clause.ts was
+  // deleted in the brand-independence rebrand). The test count is now 10.
   const missing = expected.filter((p) => !existsSync(join(root, p)));
   if (missing.length > 0) {
     fail("test files exist", `missing: ${missing.join(", ")}`);
@@ -186,6 +187,47 @@ check("package name is 'pi-caduceus' (unscoped, no @scope/ prefix)", () => {
     return;
   }
   pass("package name is 'pi-caduceus' (unscoped)");
+});
+
+check("v0.3.0: no 'el Gentleman' / 'Rioplatense' in source (brand independence)", () => {
+  const sourcesToCheck = [
+    "lib/persona-contract.ts",
+    "lib/config-store.ts",
+    "lib/slash-commands.ts",
+    "lib/wizard.ts",
+    "lib/diff.ts",
+    "lib/lint.ts",
+    "lib/errors.ts",
+    "lib/version.ts",
+    "lib/prompt-mode.ts",
+    "lib/persona-loader.ts",
+    "extensions/caduceus.ts",
+    "prompts",
+    "README.md",
+    "package.json",
+  ];
+  const forbiddenWords = ["el Gentleman", "Rioplatense"];
+  const found = [];
+  for (const source of sourcesToCheck) {
+    const fullPath = join(root, source);
+    if (!existsSync(fullPath)) continue;
+    let content;
+    try { content = readFileSync(fullPath, "utf8"); }
+    catch { continue; }
+    for (const word of forbiddenWords) {
+      if (content.includes(word)) {
+        found.push({ file: source, word });
+      }
+    }
+  }
+  if (found.length > 0) {
+    fail(
+      "no 'el Gentleman' / 'Rioplatense' in source",
+      `found in: ${found.map((f) => `${f.file} (${f.word})`).join(", ")}`,
+    );
+    return;
+  }
+  pass("no 'el Gentleman' / 'Rioplatense' in source (brand independence)");
 });
 
 check("no native binaries in expected file paths", () => {

@@ -2,76 +2,126 @@
 
 All notable changes to **caduceus** are documented here.
 
+## [0.3.0] - 2026-08-12 — Brand Independence (BREAKING)
+
+### Migration
+
+If you have a v0.2.0 `~/.pi/agent/caduceus.json` with the old mode
+or persona names, **no action is required**. The names are
+auto-migrated on read with a one-time `console.warn`:
+
+| v0.2.0 name | v0.3.0 name | Notes |
+|---|---|---|
+| `mode: "gentleman"` | `mode: "default"` | `console.warn` on first read |
+| `mode: "neutral"` | `mode: "plain"` | `console.warn` on first read |
+| `persona: "gentleman"` | `persona: "default"` | `console.warn` on first read |
+| `persona: "neutral"` | `persona: "plain"` | `console.warn` on first read |
+
+After you save the config once (e.g. by running `/caduceus:mode
+plain`), the file is v0.3.0-clean.
+
+The slash commands `/caduceus:mode` and `/caduceus:persona` also
+accept the old names as input (with a UI deprecation warning) for
+one release. After v0.4.0, only the new names are accepted.
+
+### Changed
+
+- **Mode names renamed**: `gentleman` → `default`, `neutral` →
+  `plain`. `auto` unchanged. Affects slash command args,
+  config fields, and the `PersonaMode` type.
+- **Persona names renamed**: `gentleman` → `default`, `neutral`
+  → `plain`. Affects slash command args, config fields, and
+  built-in persona files.
+- **Built-in persona files** rewritten: `prompts/default.md`
+  (replaces `gentleman.md`) and `prompts/plain.md` (replaces
+  `neutral.md`). All 10 prompt files have a new identity
+  contract block: `## caduceus Identity Contract` (replaces
+  `## el Gentleman Identity and Harness`).
+- **All 8 other personas** (concise, reviewer, teacher, security,
+  debugger, socratic, architect, pirate) had their identity
+  contract block and harness principles rewritten as
+  caduceus-original content. No more "el Gentleman" /
+  "voseo" / "Rioplatense" references.
+- **No language clause** appended to persona prompts. The
+  model is expected to detect the user's input language
+  naturally. `lib/locale-detect.ts` is kept (still useful for
+  `/caduceus:status` and the wizard).
+- **Lint redesigned**: removed the `CROSS_MODE_LEAK_GENTLEMAN`
+  and `CROSS_MODE_LEAK_NEUTRAL` checks (they were voseo-based).
+  Added a new `CONFLICTING_VOICE_MARKERS` warning (detect
+  personas that try to be both "concise" and "verbose" in the
+  same block).
+- **Config defaults**: `mode: "default"`, `persona: "default"`.
+- **`/caduceus:status`**: shows the new mode and persona names.
+- **`/caduceus:mode`**: accepts `default | plain | auto`. Old
+  names accepted with deprecation warning.
+- **`/caduceus:persona`**: lists 10 caduceus-original personas.
+  Old names accepted with deprecation warning.
+- **`/caduceus:diff`**: defaults to `active vs default` (was
+  `active vs gentleman`).
+- **`/caduceus:create`**: wizard template uses the new
+  caduceus-original identity contract and harness principles.
+- **`extensions/caduceus.ts`**: no longer appends a language
+  clause in `before_agent_start`. Reads config, applies
+  migrations, and resolves the persona.
+
+### Removed
+
+- **`lib/language-clause.ts`** — the voseo / Rioplatense Spanish
+  clause function. v0.3.0 has no language clause; the model
+  detects the user's language naturally.
+- **`tests/language-clause.test.ts`** — corresponding test file.
+- **`prompts/gentleman.md`** and **`prompts/neutral.md`** — the
+  two built-in personas that shadowed gentle-pi. Replaced with
+  `default.md` and `plain.md`.
+- **`persona-contract.test.ts` R-PERSONA-007 / R-PERSONA-008** —
+  the byte-stable-against-gentle-pi checks. caduceus is no
+  longer content-locked to gentle-pi.
+
+### Internal
+
+- `lib/config-store.ts` — new `MODE_MIGRATION` and
+  `PERSONA_MIGRATION` maps. `applyMigrations()` helper called
+  inside `readConfig`.
+- `lib/persona-loader.ts` — `BUILT_IN_PERSONAS` updated to
+  `{default, plain, concise, reviewer, teacher, security,
+  debugger, socratic, architect, pirate}`.
+- `lib/lint.ts` — removed `checkCrossModeLeakGentleman` and
+  `checkCrossModeLeakNeutral`. Added
+  `checkConflictingVoiceMarkers`.
+- `lib/wizard.ts` — `IDENTITY_BLOCK` and `HARNESS_BLOCK` are
+  the new caduceus-original text.
+- `extensions/caduceus.ts` — variables `cwd`, `loadedPersona`,
+  `systemPromptMode` in the closure. Mode resolution uses
+  `default` and `plain` (previously `gentleman` and `neutral`).
+- `scripts/verify-package.mjs` — added a new grep check that
+  fails on any `el Gentleman` or `Rioplatense` in the source
+  (excluding `lib/locale-detect.ts` which legitimately uses
+  `voseo` as a detection marker).
+
+### Test count
+
+- v0.2.0: 165 tests across 11 files
+- v0.3.0: 152 tests across 10 files (−13 tests from removed
+  cross-mode checks and language-clause tests)
+
 ## [0.2.0] - 2026-08-12
 
 ### Added
 
-- **6 new built-in personas**: `teacher`, `security`, `debugger`,
-  `socratic`, `architect`, `pirate`. Each follows the standard
-  4-block structure and is lint-clean. Total built-ins: 4 → 10.
-- **`/caduceus:create <name> <description...>`** — new slash
-  command that generates a persona file from a name and
-  description. Style defaults to `custom`; scope defaults to
-  `project`. Runs lint on the generated file; refuses to write
-  if lint fails. **Unique:** no LLM dependency (template-based,
-  byte-stable). Comparable to `@isr4el-silv4/persona`'s
-  `/persona create` but with built-in contract enforcement.
-- **`/caduceus:diff [a [b]]`** — new slash command that
-  renders two personas with the current mode + locale and
-  shows a unified diff. Defaults to diffing the active persona
-  against `gentleman`. Hand-rolled Myers diff (preserves
-  0 runtime deps).
-- **`buildPersonaPromptFromContent(content, mode, locale)`** —
-  new helper in `lib/persona-contract.ts` that renders a
-  persona from arbitrary markdown content (used by the diff
-  command).
-- New `lib/wizard.ts` module with `generatePersonaContent`,
-  `validateStep`, `personaFilePath`, `writeAndLint`, and the
-  `WizardStep` / `WizardStyle` / `WizardScope` types.
-- New `lib/diff.ts` module with `personaDiff` and
-  `computeUnifiedDiff` (the hand-rolled Myers algorithm).
-
-### Internal
-
-- `lib/persona-contract.ts` — adds `buildPersonaPromptFromContent`;
-  existing `buildPersonaPrompt` is unchanged (backward compat).
-- `lib/slash-commands.ts` — registers 2 new commands; adds
-  5 new deps for the wizard + diff layers.
-- `lib/persona-loader.ts` — `BUILT_IN_PERSONAS` set extended
-  with 6 new names.
-- `lib/errors.ts` — unchanged.
-- `extensions/caduceus.ts` — wires the 5 new deps
-  (validateWizardStep, generateWizardContent, wizardFilePath,
-  writeAndLint, personaDiff).
-- `tests/extension-entry.test.ts` — expects 9 slash commands
-  (was 7 in v0.1.0, 8 in v0.1.1).
-- `scripts/verify-package.mjs` — expects 11 test files (was 6 in
-  v0.1.0, 9 in v0.1.1).
-
-### Test count
-
-- v0.1.0: 68 tests across 6 files
-- v0.1.1: 116 tests across 9 files
-- v0.2.0: 165 tests across 11 files (+49 tests)
+- 6 new built-in personas: `teacher`, `security`, `debugger`,
+  `socratic`, `architect`, `pirate`.
+- `/caduceus:create <name> <description>` slash command.
+- `/caduceus:diff [a [b]]` slash command.
+- `lib/wizard.ts` and `lib/diff.ts` modules.
 
 ## [0.1.1] - 2026-08-12
 
 ### Added
 
-- `/caduceus:prompt <append|replace>` — slash command to switch
-  between "append" and "replace" prompt modes.
-- `/caduceus:persona <name|list>` — slash command to switch
-  persona. `list` shows all available (built-in + global +
-  project).
-- `/caduceus:lint` — slash command that runs static checks on
-  the active persona file.
-- Two new built-in personas: `concise` and `reviewer`.
-- Two new config fields with backward-compatible defaults:
-  `systemPromptMode` (default `"append"`) and `persona`
-  (default `"gentleman"`).
-- Persona filesystem discovery at
-  `~/.pi/agent/caduceus/personas/<name>.md` and
-  `.caduceus/personas/<name>.md`.
+- `/caduceus:prompt`, `/caduceus:persona`, `/caduceus:lint`.
+- 2 new built-in personas: `concise` and `reviewer`.
+- Persona filesystem discovery at `~/.pi/agent/caduceus/personas/`.
 
 ## [0.1.0] - 2026-08-12
 
@@ -81,6 +131,4 @@ All notable changes to **caduceus** are documented here.
   neutral) with byte-stable content from `gentle-pi`.
 - 4 slash commands.
 - JSONC-tolerant `.caduceusrc` project override.
-- 0 runtime dependencies. 0 postinstall. 0 native binaries.
-- 68 tests, 13 verify checks, all green.
-- Published to npm: `pi-caduceus@0.1.0`.
+- 0 runtime dependencies.

@@ -51,26 +51,26 @@ function cleanup(home: string): void {
 // loadPersona: built-in personas
 // ---------------------------------------------------------------------------
 
-test("loadPersona('gentleman') returns the built-in gentleman persona", () => {
+test("loadPersona('default') returns the built-in default persona", () => {
   const home = makeTempHome();
   try {
-    const persona = loadPersona("gentleman", home, home);
-    assert.equal(persona.name, "gentleman");
+    const persona = loadPersona("default", home, home);
+    assert.equal(persona.name, "default");
     assert.equal(persona.source, "built-in");
     assert.equal(persona.path, null);
-    assert.match(persona.content, /natural Rioplatense Spanish with voseo/);
+    assert.match(persona.content, /senior developer with an architect/);
   } finally {
     cleanup(home);
   }
 });
 
-test("loadPersona('neutral') returns the built-in neutral persona", () => {
+test("loadPersona('plain') returns the built-in plain persona", () => {
   const home = makeTempHome();
   try {
-    const persona = loadPersona("neutral", home, home);
-    assert.equal(persona.name, "neutral");
+    const persona = loadPersona("plain", home, home);
+    assert.equal(persona.name, "plain");
     assert.equal(persona.source, "built-in");
-    assert.match(persona.content, /Do NOT use voseo/);
+    assert.match(persona.content, /Be minimal\. Answer in 1-3 sentences/);
   } finally {
     cleanup(home);
   }
@@ -177,13 +177,13 @@ test("global persona shadows built-in persona with the same name", () => {
     const globalDir = join(home, "agent", "caduceus", "personas");
     mkdirSync(globalDir, { recursive: true });
     writeFileSync(
-      join(globalDir, "gentleman.md"),
-      "# my-gentleman (custom global)\n${mode}\n",
+      join(globalDir, "default.md"),
+      "# my-default (custom global)\n${mode}\n",
     );
 
-    const persona = loadPersona("gentleman", home, join(home, "agent"));
+    const persona = loadPersona("default", home, join(home, "agent"));
     assert.equal(persona.source, "global");
-    assert.match(persona.content, /my-gentleman/);
+    assert.match(persona.content, /my-default/);
   } finally {
     cleanup(home);
   }
@@ -213,8 +213,8 @@ test("listPersonas returns built-in personas by default", () => {
   const home = makeTempHome();
   try {
     const names = listPersonas(home, join(home, "agent"));
-    assert.ok(names.includes("gentleman"));
-    assert.ok(names.includes("neutral"));
+    assert.ok(names.includes("default"));
+    assert.ok(names.includes("plain"));
     assert.ok(names.includes("concise"));
     assert.ok(names.includes("reviewer"));
   } finally {
@@ -286,11 +286,11 @@ test("malformed project file: read error does not crash — falls through to glo
     mkdirSync(personasDir, { recursive: true });
     // Create a DIRECTORY named "gentleman.md" where the file should be.
     // This makes readFileSync throw EISDIR.
-    mkdirSync(join(personasDir, "gentleman.md"));
+    mkdirSync(join(personasDir, "default.md"));
 
     // Should fall through to the built-in (since the project path
     // throws and the global doesn't exist).
-    const persona = loadPersona("gentleman", projectDir, join(home, "agent"));
+    const persona = loadPersona("default", projectDir, join(home, "agent"));
     assert.equal(persona.source, "built-in");
   } finally {
     cleanup(home);

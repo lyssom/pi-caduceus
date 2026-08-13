@@ -41,7 +41,7 @@ test("R-WIZARD-2: generated content has the 4 required blocks", () => {
     description: "Speaks like a wise wizard who never gives direct answers.",
     style: "friendly",
   });
-  assert.match(content, /## el Gentleman Identity and Harness/);
+  assert.match(content, /## caduceus Identity Contract/);
   assert.match(content, /\$\{mode\}/); // placeholder
   assert.match(content, /Identity contract:/);
   assert.match(content, /## Persona/);

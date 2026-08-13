@@ -54,7 +54,7 @@ export type CommandDeps = {
   personaDiff: (input: {
     leftName: string;
     rightName: string;
-    mode: "gentleman" | "neutral" | "auto";
+    mode: "default" | "plain" | "auto";
     locale: string;
     cwd: string;
   }) => { ok: boolean; diff: string; leftName: string; rightName: string };
@@ -91,7 +91,7 @@ export function defaultRenderInspectOutput(
 // Validation helpers
 // ---------------------------------------------------------------------------
 
-const VALID_MODES: PersonaMode[] = ["gentleman", "neutral", "auto"];
+const VALID_MODES: PersonaMode[] = ["default", "plain", "auto"];
 
 // Closed set for slash-command validation. Custom locales (R-LOCALE-007)
 // are accepted by the file-based config path (.caduceusrc) but NOT by the
@@ -137,12 +137,12 @@ export function registerSlashCommands(
 
   // /caduceus:mode ----------------------------------------------------------
   pi.registerCommand("caduceus:mode", {
-    description: "Set the persona mode: gentleman | neutral | auto.",
+    description: "Set the persona mode: default | plain | auto.",
     handler: async (args: string, ctx: ExtensionCommandContext) => {
       const value = args.trim();
       if (!isValidMode(value)) {
         ctx.ui.notify(
-          `usage: /caduceus:mode <gentleman|neutral|auto> (got "${args}")`,
+          `usage: /caduceus:mode <default|plain|auto> (got "${args}")`,
           "warning",
         );
         return;
@@ -313,7 +313,7 @@ pi.registerCommand("caduceus:create", {
 
 // /caduceus:diff ----------------------------------------------------------
 pi.registerCommand("caduceus:diff", {
-  description: "Diff two personas. Usage: /caduceus:diff [a [b]] (defaults: a=active, b=gentleman).",
+  description: "Diff two personas. Usage: /caduceus:diff [a [b]] (defaults: a=active, b=default).",
   handler: async (args, ctx) => {
     const tokens = args.trim().split(/\s+/).filter(Boolean);
     const { config } = deps.readConfig(ctx.cwd);
@@ -322,9 +322,9 @@ pi.registerCommand("caduceus:diff", {
 
     let a: string, b: string;
     if (tokens.length === 0) {
-      // 0 args: diff active persona vs gentleman
+      // 0 args: diff active persona vs default
       a = config.persona;
-      b = "gentleman";
+      b = "default";
     } else if (tokens.length === 1) {
       // 1 arg: diff <arg> vs active
       a = tokens[0];

@@ -54,13 +54,13 @@ Harness principles:
 // Happy path: each built-in persona must pass lint
 // ---------------------------------------------------------------------------
 
-test("R-LINT-1: prompts/gentleman.md passes lint", () => {
-  const result = lintPersonaContent(readBuiltInPrompt("gentleman"), "gentleman");
+test("R-LINT-1: prompts/default.md passes lint", () => {
+  const result = lintPersonaContent(readBuiltInPrompt("default"), "default");
   assert.equal(result.passed, true, JSON.stringify(result.issues, null, 2));
 });
 
-test("R-LINT-1b: prompts/neutral.md passes lint", () => {
-  const result = lintPersonaContent(readBuiltInPrompt("neutral"), "neutral");
+test("R-LINT-1b: prompts/plain.md passes lint", () => {
+  const result = lintPersonaContent(readBuiltInPrompt("plain"), "plain");
   assert.equal(result.passed, true, JSON.stringify(result.issues, null, 2));
 });
 
@@ -107,38 +107,10 @@ test("v0.2.0: prompts/pirate.md passes lint", () => {
 });
 
 // ---------------------------------------------------------------------------
-// Check 1: cross-mode leakage — gentleman must not say "Do NOT use voseo"
+// Check 1 (v0.2.0): cross-mode leakage — REMOVED in v0.3.0
+// (The v0.3.0 lint has no mode-specific checks; the conflicting-voice
+// check below replaces the cross-mode leak concept.)
 // ---------------------------------------------------------------------------
-
-test("R-LINT-2: gentleman persona with 'Do NOT use voseo' fails lint (cross-mode leak)", () => {
-  const result = lintPersonaContent(
-    "## Persona\nPersona:\n- Do NOT use voseo.\n## Harness principles\nHarness principles:\n- Foo.\n",
-    "gentleman",
-  );
-  assert.equal(result.passed, false);
-  const leakIssue = result.issues.find((i) =>
-    i.message.toLowerCase().includes("do not use voseo") &&
-    i.message.toLowerCase().includes("gentleman"),
-  );
-  assert.ok(leakIssue, `expected a cross-mode leak issue, got ${JSON.stringify(result.issues)}`);
-});
-
-// ---------------------------------------------------------------------------
-// Check 2: cross-mode leakage — neutral must not say "natural Rioplatense Spanish with voseo"
-// ---------------------------------------------------------------------------
-
-test("R-LINT-3: neutral persona with voseo clause fails lint (cross-mode leak)", () => {
-  const result = lintPersonaContent(
-    "## Persona\nPersona:\n- natural Rioplatense Spanish with voseo.\n## Harness principles\nHarness principles:\n- Foo.\n",
-    "neutral",
-  );
-  assert.equal(result.passed, false);
-  const leakIssue = result.issues.find((i) =>
-    i.message.toLowerCase().includes("rioplatense spanish with voseo") &&
-    i.message.toLowerCase().includes("neutral"),
-  );
-  assert.ok(leakIssue, `expected a cross-mode leak issue, got ${JSON.stringify(result.issues)}`);
-});
 
 // ---------------------------------------------------------------------------
 // Check 3: structural blocks must exist
@@ -215,24 +187,31 @@ test("R-LINT-9: persona without ${mode} placeholder fails lint", () => {
 });
 
 // ---------------------------------------------------------------------------
-// Check 6 (warning, not error): voseo / do-not-voseo must be in conditional
+// v0.3.0: conflicting-voice check
 // ---------------------------------------------------------------------------
 
-test("R-LINT-10 (warning): voseo reference outside a 'when Spanish' conditional", () => {
-  // The voseo reference is bare, not in a "When the user writes Spanish..."
-  // sentence. This is a heuristic warning, not a hard error — lint still
-  // passes overall, but issues[] contains a warning.
+test("v0.3.0: persona with both concise and verbose markers triggers CONFLICTING_VOICE_MARKERS warning", () => {
   const result = lintPersonaContent(
-    `Current persona mode: \${mode}\n## Identity contract\nIdentity contract:\n- Foo.\n## Persona\nPersona:\n- Use voseo.\n## Harness principles\nHarness principles:\n- Foo.\n`,
-    "gentleman",
+    `## caduceus Identity Contract\n\nCurrent persona mode: \${mode}\n\nYou are running under caduceus.\n\nIdentity contract:\n- Foo.\n\n## Persona\nPersona:\n- Be brief and concise.\n- Then elaborate in detail.\n\n## Harness principles\nHarness principles:\n- Foo.\n`,
+    "weird-persona",
   );
-  // Lint passes overall (only warning, not error)
-  assert.equal(result.passed, true);
-  // But issues includes a warning
-  const warn = result.issues.find(
-    (i) => i.severity === "warning" && i.message.toLowerCase().includes("voseo"),
+  assert.equal(result.passed, true, "warning should not fail lint");
+  const conflict = result.issues.find(
+    (i) => i.check === "CONFLICTING_VOICE_MARKERS",
   );
-  assert.ok(warn, `expected a voseo-conditional warning, got ${JSON.stringify(result.issues)}`);
+  assert.ok(conflict, `expected CONFLICTING_VOICE_MARKERS issue, got ${JSON.stringify(result.issues)}`);
+  assert.equal(conflict?.severity, "warning");
+});
+
+test("v0.3.0: persona with only concise markers passes without warning", () => {
+  const result = lintPersonaContent(
+    `## caduceus Identity Contract\n\nCurrent persona mode: \${mode}\n\nYou are running under caduceus.\n\nIdentity contract:\n- Foo.\n\n## Persona\nPersona:\n- Be brief and concise.\n\n## Harness principles\nHarness principles:\n- Foo.\n`,
+    "concise-only",
+  );
+  const conflict = result.issues.find(
+    (i) => i.check === "CONFLICTING_VOICE_MARKERS",
+  );
+  assert.equal(conflict, undefined);
 });
 
 // ---------------------------------------------------------------------------

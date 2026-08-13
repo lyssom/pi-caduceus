@@ -1,23 +1,31 @@
 # pi-caduceus
 
 > **Persona Contract package for [pi](https://pi.dev).**
-> Injects a deterministic, testable, line-citable persona prompt segment
-> before the first token of a pi session, given `(mode, locale)`.
+> caduceus defines personas as testable contracts. It injects a
+> deterministic, line-citable persona prompt segment before the first
+> token of a pi session, given `(mode, locale)`. 0 runtime dependencies,
+> 0 postinstall, 0 native binaries.
 
-**caduceus** is the smaller sibling of
-[`gentle-pi`](https://github.com/Gentleman-Programming/gentle-pi). Where
-gentle-pi is a full development harness (review tooling, SDD engine,
-subagents, delivery skills), caduceus does one thing: the persona
-contract. Users who want only the persona layer — and none of
-gentle-pi's other machinery — install caduceus.
+## Why caduceus?
 
-- **0 runtime dependencies**
-- **0 native binaries** — no postinstall, no Go toolchain, no signed archives
-- **2 persona modes** — `gentleman` (Rioplatense Spanish voseo) and `neutral` (no voseo)
-- **4 slash commands** — `status`, `mode`, `locale`, `inspect`
-- **JSONC-tolerant** project-level `.caduceusrc` override
+Most persona layers for pi are either feature-bloated (large harness
+packages) or feature-thin (single file loaders). caduceus is the
+focused middle ground:
 
-> *"Persona is a contract, not a costume."*
+- **Persona as a contract**: every persona must pass `/caduceus:lint`
+  (structural checks, byte-stability, conflicting-voice detection).
+- **Locale-aware**: the active persona is appended to the system prompt
+  in a way that respects the user's detected language.
+- **Replace / Append mode**: choose `append` (default — adds persona
+  to pi's existing system prompt) or `replace` (replaces entirely).
+- **Persona filesystem discovery**: drop a `.md` file into
+  `~/.pi/agent/caduceus/personas/` or `.caduceus/personas/`, switch
+  with `/caduceus:persona <name>`.
+- **Wizard**: `/caduceus:create <name> <description>` generates a new
+  persona from a name and a one-line description.
+- **Diff**: `/caduceus:diff [a [b]]` compares two personas side-by-side.
+- **10 built-in personas**, all caduceus-original.
+- **0 runtime dependencies**.
 
 ## Install
 
@@ -25,68 +33,64 @@ gentle-pi's other machinery — install caduceus.
 pi install npm:pi-caduceus
 ```
 
-The package registers one extension (`extensions/caduceus.ts`), one
-theme (`themes/caduceus.json`), and no prompt files (caduceus
-generates the persona prompt at runtime from its embedded templates).
+The package registers one extension (`extensions/caduceus.ts`),
+one theme (`themes/caduceus.json`), and contributes to pi's
+slash-command list.
 
 ## Quick Start
 
-Once installed, start a pi session:
-
-```bash
-pi
-```
-
-Run `/caduceus:status` to see the effective configuration:
+Run a slash command to see the active config:
 
 ```text
-caduceus status:
-  mode: gentleman
-  locale: auto
-  showStatusBar: false
-  allowProjectOverride: true
-  source: built-in defaults
+/caduceus:status
 ```
 
-Run `/caduceus:inspect` to see the persona prompt that will be
-injected on the next LLM call:
+Switch the active persona:
 
 ```text
-## caduceus inspect
-mode: gentleman
-locale: auto
-
-## el Gentleman Identity and Harness
-Current persona mode: gentleman
-...
+/caduceus:persona concise
 ```
 
-Write a prompt in Spanish — the model responds in Rioplatense Spanish
-with voseo. Switch to `/caduceus:mode neutral` and the same prompt
-gets a neutral Spanish response without voseo.
+Generate a new persona from a name and description:
+
+```text
+/caduceus:create wizard Speaks like a wise wizard who never gives direct answers
+```
+
+Run the persona linter:
+
+```text
+/caduceus:lint
+```
+
+Compare two personas:
+
+```text
+/caduceus:diff pirate concise
+```
 
 ## Slash Commands
 
 | Command | Description |
 |---|---|
 | `/caduceus:status` | Show the effective configuration. |
-| `/caduceus:mode <gentleman\|neutral\|auto>` | Switch persona mode (language awareness). |
+| `/caduceus:mode <default\|plain\|auto>` | Switch persona mode (the label that runs through the persona). |
 | `/caduceus:locale <auto\|es-AR\|es-ES\|en\|zh>` | Set the locale preference. |
 | `/caduceus:persona <name\|list>` | Switch persona; `list` shows built-in + global + project. |
 | `/caduceus:prompt <append\|replace>` | How to inject the persona (append = default, replace = persona only). |
 | `/caduceus:inspect` | Print the rendered persona prompt. |
 | `/caduceus:lint` | Run static checks on the active persona. |
 | `/caduceus:create <name> <description>` | Generate a new persona file from a name and description. |
-| `/caduceus:diff [a [b]]` | Diff two personas (defaults: active vs gentleman). |
+| `/caduceus:diff [a [b]]` | Diff two personas (defaults: active vs default). |
 
 ## Built-in Personas
 
 | Persona | Category | Use case |
 |---|---|---|
-| `gentleman` | domain (default) | Senior architect, Rioplatense Spanish with voseo. |
-| `neutral` | domain | Professional, no voseo. Enterprise / formal contexts. |
-| `concise` | style | 1-3 sentence answers, no preamble. Quick answers, code-first. |
-| `reviewer` | style | Code review with BLOCKER/SHOULD/NIT severity. PR review mode. |
+| `default` | domain (default) | Senior developer / architect voice. Direct, technical, names tradeoffs. |
+| `plain` | domain | Minimal voice. Just answers the question. |
+| `concise` | style | 1-3 sentence answers, no preamble. |
+| `reviewer` | style | Code review with BLOCKER/SHOULD/NIT severity. |
 | `teacher` | style | Patient teacher. Explains concepts step by step. |
 | `security` | domain | Paranoid security engineer. Flags vulns by severity. |
 | `debugger` | domain | Methodical debugger. Traces through code paths. |
@@ -105,86 +109,52 @@ Add your own by dropping a markdown file at
 # Switch with: /caduceus:persona wizard
 ```
 
-## Configuration
+## What caduceus is NOT
 
-Configuration is read at session start from two locations:
-
-1. **Global:** `~/.pi/agent/caduceus.json` (strict JSON)
-2. **Project:** `.caduceusrc` in the current directory (JSONC, comments
-   allowed)
-
-The project override is honored only if `allowProjectOverride: true` in
-the global config (the default).
-
-Default configuration:
-
-```json
-{
-  "mode": "gentleman",
-  "locale": "auto",
-  "showStatusBar": false,
-  "allowProjectOverride": true
-}
-```
-
-`.caduceusrc` example (JSONC with comments):
-
-```jsonc
-// Override for this project only
-{
-  "mode": "neutral"
-}
-```
-
-## Why "caduceus"?
-
-Hermes's staff. In Greek myth, the caduceus is the **staff of the
-messenger god** — a symbol of commerce, contracts, and negotiated
-agreement. Caduceus is one layer above the messenger (`pi-hermes-memory`
-is the memory layer; caduceus is the contract layer above the
-messenger). Clean brand fit, no collision.
-
-See [INIT.md](./INIT.md) for the full naming rationale and design DNA.
+- **Not a fork of any other persona layer.** caduceus is an independent
+  product. The persona contract, the lint, the wizard, and the diff are
+  caduceus-original designs.
+- **Not a full harness.** No review tools, no subagent machinery, no SDD
+  pipeline. Those exist in other packages (e.g. `gentle-pi`).
+- **Not carrying other people's voice.** Each built-in persona is
+  caduceus-original. You don't inherit another project's tone by
+  installing caduceus.
 
 ## Architecture
 
 ```
 extensions/caduceus.ts        # SHELL — the only file that imports from pi
 lib/
-├── persona-contract.ts        # Pure: (mode, locale) → persona prompt
-├── language-clause.ts         # Pure: (locale, mode) → language boundary
-├── locale-detect.ts           # Pure: (text, env, config) → locale
-├── config-store.ts            # The only file that touches the FS for config
-├── slash-commands.ts          # /caduceus:* command registry
-├── version.ts                 # CADUCEUS_VERSION = "0.1.0"
-└── errors.ts                  # CaduceusError, CaduceusConfigError
-prompts/
-├── gentleman.md               # Persona body (verbatim from gentle-pi)
-└── neutral.md                 # Persona body (verbatim from gentle-pi)
-themes/
-└── caduceus.json              # Sea-blue starter theme
-tests/
-└── *.test.ts                  # 6 test files, 68 tests, strict TDD
-scripts/
-└── verify-package.mjs         # Pre-publish integrity check
+├── persona-contract.ts       # MEAT (pure): (mode, locale) → prompt string
+├── persona-loader.ts          # MEAT: loadPersona(name, cwd, home?)
+├── locale-detect.ts          # MEAT (pure): (text, env, cfg) → locale
+├── lint.ts                   # MEAT (pure): static persona checks
+├── prompt-mode.ts            # MEAT (pure): composeSystemPrompt(base, persona, mode)
+├── config-store.ts           # MEAT: readConfig + writeGlobalConfig + migrations
+├── slash-commands.ts         # MEAT: registerSlashCommands(pi, deps)
+├── wizard.ts                 # MEAT (pure): generatePersonaContent, validateStep
+├── diff.ts                   # MEAT (pure): personaDiff (hand-rolled Myers)
+├── errors.ts                 # CaduceusError, CaduceusConfigError, CaduceusPersonaNotFoundError, CaduceusLintError
+└── version.ts                # CADUCEUS_VERSION = "0.3.0"
+prompts/                      # 10 markdown files (one per built-in persona)
+themes/caduceus.json          # sea-blue starter theme
+tests/                        # 10 test files, 152 tests
+scripts/verify-package.mjs    # pre-publish integrity check
 ```
 
-The split follows `INIT.md §4` DNA-1: the extension entry is the
-**shell** (talks to pi), the libraries are the **meat** (pure,
-testable, independent of pi's runtime). The two prompt files are
-verbatim copies of `gentle-pi/extensions/gentle-ai.ts` lines 258–266
-and 268–277, enforced byte-for-byte by
-`tests/persona-contract.test.ts`.
+The split follows DSV DNA: the extension entry is the **shell** (talks
+to pi), the `lib/` modules are the **meat** (pure, testable, independent
+of pi's runtime).
 
 ## Development
 
 ```bash
-# Run the full test suite (68 tests)
+# Run the full test suite (152 tests)
 node --experimental-strip-types --test tests/*.test.ts
 # or
 pnpm test
 
-# Verify the package before publishing
+# Verify the package before publishing (13 pre-publish checks)
 node scripts/verify-package.mjs
 ```
 

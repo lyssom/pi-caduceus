@@ -58,9 +58,9 @@ test("R-DIFF-4: computeUnifiedDiff is byte-stable for same inputs", () => {
 
 test("R-DIFF-5: personaDiff with same persona name returns empty diff", () => {
   const input: DiffInput = {
-    leftName: "gentleman",
-    rightName: "gentleman",
-    mode: "gentleman",
+    leftName: "default",
+    rightName: "default",
+    mode: "default",
     locale: "en",
     cwd: "/tmp/nonexistent",
   };
@@ -71,18 +71,18 @@ test("R-DIFF-5: personaDiff with same persona name returns empty diff", () => {
 });
 
 test("R-DIFF-6: personaDiff with two different personas returns a unified diff", () => {
-  // The pirate and gentleman personas have different content
+  // The pirate and default personas have different content
   const input: DiffInput = {
     leftName: "pirate",
-    rightName: "gentleman",
-    mode: "gentleman",
+    rightName: "default",
+    mode: "default",
     locale: "en",
     cwd: "/tmp/nonexistent",
   };
   const result = personaDiff(input);
   assert.equal(result.ok, true);
   assert.match(result.diff, /--- pirate/);
-  assert.match(result.diff, /\+\+\+ gentleman/);
+  assert.match(result.diff, /\+\+\+ default/);
   // At least one of the personas' unique lines should appear
   assert.ok(result.diff.length > 50, "diff should have meaningful content");
 });
@@ -91,7 +91,7 @@ test("R-DIFF-7: personaDiff output is byte-stable across calls with same inputs"
   const input: DiffInput = {
     leftName: "pirate",
     rightName: "concise",
-    mode: "gentleman",
+    mode: "default",
     locale: "en",
     cwd: "/tmp/nonexistent",
   };
@@ -105,8 +105,8 @@ test("R-DIFF-7: personaDiff output is byte-stable across calls with same inputs"
 test("R-DIFF-8: personaDiff with non-existent persona throws CaduceusPersonaNotFoundError", () => {
   const input: DiffInput = {
     leftName: "nope",
-    rightName: "gentleman",
-    mode: "gentleman",
+    rightName: "default",
+    mode: "default",
     locale: "en",
     cwd: "/tmp/nonexistent",
   };
@@ -125,15 +125,15 @@ test("R-DIFF-T1: empty personas return empty diff", () => {
 });
 
 test("R-DIFF-T2: personaDiff with mode substitution: same name, different mode changes the output", () => {
-  // When mode is "neutral", the gentleman prompt still renders the same
+  // When mode is "plain", the default prompt still renders the same
   // content (mode doesn't change the persona text; only the language
   // clause is different). The diff should be small but non-empty if
   // we also include the language clause.
   // For now, just verify the function doesn't crash with different modes.
   const input: DiffInput = {
-    leftName: "gentleman",
-    rightName: "gentleman",
-    mode: "neutral",
+    leftName: "default",
+    rightName: "default",
+    mode: "plain",
     locale: "en",
     cwd: "/tmp/nonexistent",
   };

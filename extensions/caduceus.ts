@@ -46,6 +46,9 @@ import {
 import { CADUCEUS_VERSION } from "../lib/version.ts";
 import { CaduceusConfigError } from "../lib/errors.ts";
 
+// v0.3.0: lib/language-clause.ts was removed. The persona prompt is
+// no longer appended with a mode-specific language clause.
+
 // CADUCEUS_VERSION is exported for downstream consumers; not used in this
 // file directly but kept here for self-identification and future log lines.
 void CADUCEUS_VERSION;
@@ -83,16 +86,16 @@ export default function caduceus(pi: ExtensionAPI): void {
     try {
       loadedPersona = loadPersona(effective.config.persona, ctx.cwd);
     } catch (err) {
-      // Persona not found — fall back to gentleman and notify
+      // Persona not found — fall back to default and notify
       ctx.ui.notify(
-        `caduceus: persona '${effective.config.persona}' not found, using 'gentleman'`,
+        `caduceus: persona '${effective.config.persona}' not found, using 'default'`,
         "warning",
       );
       effective = {
-        config: { ...effective.config, persona: "gentleman" },
+        config: { ...effective.config, persona: "default" },
         source: effective.source,
       };
-      loadedPersona = loadPersona("gentleman", ctx.cwd);
+      loadedPersona = loadPersona("default", ctx.cwd);
     }
     // Sync the system-prompt mode from config
     systemPromptMode = effective.config.systemPromptMode;
@@ -110,7 +113,8 @@ export default function caduceus(pi: ExtensionAPI): void {
   // -----------------------------------------------------------------------
   pi.on("before_agent_start", async (event, _ctx) => {
     const cfg = effective?.config ?? DEFAULT_CONFIG;
-    const mode: PersonaMode = cfg.mode === "neutral" ? "neutral" : "gentleman";
+    // v0.3.0: mode names are "default" and "plain" (replacing "gentleman" / "neutral")
+    const mode: PersonaMode = cfg.mode === "plain" ? "plain" : "default";
     const locale: ResolvedLocale = detectLocale(event.prompt, process.env, cfg.locale);
 
     // Use the loaded persona if it matches the current config; otherwise
@@ -121,13 +125,16 @@ export default function caduceus(pi: ExtensionAPI): void {
         loadedPersona = loadPersona(targetName, cwd ?? process.cwd());
       } catch {
         // Should not happen — session_start already validates
-        loadedPersona = loadPersona("gentleman", cwd ?? process.cwd());
+        loadedPersona = loadPersona("default", cwd ?? process.cwd());
       }
     }
 
-    // Render the persona: substitute ${mode} with the resolved mode
+    // Render the persona: substitute ${mode} with the resolved mode.
+    // v0.3.0: no language clause is appended; the persona prompt is
+    // language-neutral and the model is expected to detect the user's
+    // input language naturally.
     const renderedContent = loadedPersona.content.split("${mode}").join(mode);
-    const persona = `${renderedContent}\n\n${languageClauseFor(locale, mode)}`.trim();
+    const persona = renderedContent.trim();
 
     return {
       systemPrompt: composeSystemPrompt(
@@ -197,17 +204,6 @@ export default function caduceus(pi: ExtensionAPI): void {
 }
 
 // ---------------------------------------------------------------------------
-// Internal: language clause lookup (kept here so the extension entry is
-// self-contained; the persona-contract path uses languageClause for the
-// 2 built-in personas, but here we need to apply it to any loaded persona
-// since user personas don't have the language clause baked in).
+// (v0.3.0: language-clause lookup was removed; the persona prompt is
+// language-neutral now.)
 // ---------------------------------------------------------------------------
-
-import { languageClause } from "../lib/language-clause.ts";
-
-function languageClauseFor(
-  locale: ResolvedLocale,
-  mode: PersonaMode,
-): string {
-  return languageClause(locale, mode);
-}
