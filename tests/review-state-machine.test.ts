@@ -58,7 +58,8 @@ interface ChangeFixture {
 function makeChangeDir(changeName: string = "test-change"): ChangeFixture {
   const cwd = mkdtempSync(join(tmpdir(), "caduceus-state-"));
   const changeDir = join(cwd, "openspec", "changes", changeName);
-  // Create the 5 required files (so computeContentHash works)
+  // Create the changeDir and the 5 required files (so computeContentHash works)
+  mkdirSync(changeDir, { recursive: true });
   for (const f of ["proposal.md", "design.md", "tasks.md", "requirements.md", "constitution.md"]) {
     writeFileSync(join(changeDir, f), `# ${f}\n`);
   }
