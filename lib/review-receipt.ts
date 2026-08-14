@@ -71,6 +71,11 @@ const HASHED_FILES: ReadonlyArray<string> = Object.freeze([
  */
 export function normalize(content: string): string {
   return content
+    // Strip UTF-8 BOM (\uFEFF) at file start — Windows editors (Notepad,
+    // some VS Code configs) save UTF-8 files with a BOM. Without this
+    // strip, BOM-prefixed content would hash differently from clean
+    // content and invalidate content-bound receipts.
+    .replace(/^\uFEFF/, "")
     .replace(/\r\n/g, "\n")
     .replace(/[ \t]+$/gm, "")
     .replace(/\n+$/, "\n");

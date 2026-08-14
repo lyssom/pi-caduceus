@@ -291,10 +291,29 @@ test("T05-R-RECEIPT-14: receipt changeId is derived from directory name", () => 
 });
 
 // ---------------------------------------------------------------------------
-// Test 15 (TRIANGULATE): receipt is content-bound to all 5 files
+// Test 15 (I3 bug-fix RED): UTF-8 BOM at file start is normalized away
 // ---------------------------------------------------------------------------
 
-test("T05-R-RECEIPT-15: receipt hash changes when ANY of the 5 files changes", () => {
+test("T05-R-RECEIPT-15a: UTF-8 BOM at file start is normalized away", () => {
+  const dir = makeChangeDir();
+  try {
+    // Write BOM-prefixed content (\uFEFF is the UTF-8 BOM character)
+    writeFileSync(join(dir, "proposal.md"), "\uFEFF# proposal.md\n\nWith BOM.\n");
+    const bomHash = computeContentHash(dir);
+    // Write same content without BOM
+    writeFileSync(join(dir, "proposal.md"), "# proposal.md\n\nWith BOM.\n");
+    const cleanHash = computeContentHash(dir);
+    assert.equal(bomHash, cleanHash, "BOM and non-BOM should produce same hash");
+  } finally {
+    rmSync(dir, { recursive: true });
+  }
+});
+
+// ---------------------------------------------------------------------------
+// Test 16 (TRIANGULATE): receipt is content-bound to all 5 files
+// ---------------------------------------------------------------------------
+
+test("T05-R-RECEIPT-16: receipt hash changes when ANY of the 5 files changes", () => {
   const dir = makeChangeDir();
   try {
     const original = computeContentHash(dir);
