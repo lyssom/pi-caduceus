@@ -114,9 +114,10 @@ test("T09-R-SDDSLASH-1: registerSddSlashCommands registers exactly 5 commands", 
 
 test("T09-R-SDDSLASH-2: /caduceus:sdd:init delegates to sddInit with parsed name", async () => {
   const pi = makeMockPi();
+  const { ctx } = makeMockCtx();
   const deps = makeMockDeps();
   registerSddSlashCommands(pi, deps);
-  await pi.commands["caduceus:sdd:init"].handler("my-change", {});
+  await pi.commands["caduceus:sdd:init"].handler("my-change", ctx);
   assert.equal(deps.calls.length, 1);
   assert.equal(deps.calls[0].fn, "sddInit");
   assert.equal((deps.calls[0].args as { changeName: string }).changeName, "my-change");
