@@ -30,7 +30,7 @@ export type LintCheckId =
   | "PERSONA_BLOCK"
   | "PRINCIPLES_BLOCK"
   | "NO_TIMESTAMP"
-  | "MODE_PLACEHOLDER";
+  | "PLACEHOLDER";
 
 export type LintResult = {
   passed: boolean;
@@ -76,13 +76,37 @@ const hasPrinciplesBlock: CheckFn = (content) => {
   return null;
 };
 
-const hasModePlaceholder: CheckFn = (content) => {
+// v0.4.0: PLACEHOLDER check. Requires ${mode} (the persona contract) and
+// warns on any other ${...} pattern that is not in the supported macros list.
+const SUPPORTED_MACROS_FOR_LINT = new Set([
+  "mode",           // required by the persona contract
+  "userName",       // v0.4.0+
+  "projectName",
+  "cwd",
+  "date",
+  "os",
+]);
+
+const checkPlaceholders: CheckFn = (content) => {
+  // ${mode} is required (v0.1.0 invariant)
   if (!content.includes("${mode}")) {
     return {
       severity: "error",
-      check: "MODE_PLACEHOLDER",
+      check: "PLACEHOLDER",
       message: "Persona must contain the '${mode}' placeholder (runtime substitution).",
     };
+  }
+  // Find all ${...} patterns and check each is in the supported set
+  const matches = content.match(/\$\{[^}]+\}/g) ?? [];
+  for (const m of matches) {
+    const name = m.slice(2, -1);  // strip `${` and `}`
+    if (!SUPPORTED_MACROS_FOR_LINT.has(name)) {
+      return {
+        severity: "warning",
+        check: "PLACEHOLDER",
+        message: `Unknown macro '${m}'. Supported macros: ${Array.from(SUPPORTED_MACROS_FOR_LINT).join(", ")}.`,
+      };
+    }
   }
   return null;
 };
@@ -163,7 +187,7 @@ const ALL_CHECKS: ReadonlyArray<CheckFn> = [
   hasIdentityBlock,
   hasPersonaBlock,
   hasPrinciplesBlock,
-  hasModePlaceholder,
+  checkPlaceholders,
   checkNoTimestamp,
   checkConflictingVoiceMarkers,
 ];

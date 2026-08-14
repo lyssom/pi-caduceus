@@ -30,7 +30,7 @@ function makeMockPi() {
   };
 }
 
-test("extension registers session_start, before_agent_start, and 9 slash commands", () => {
+test("extension registers session_start, before_agent_start, and 10 slash commands", () => {
   const pi = makeMockPi();
   caduceus(pi as unknown as Parameters<typeof caduceus>[0]);
 
@@ -43,7 +43,7 @@ test("extension registers session_start, before_agent_start, and 9 slash command
   assert.equal(pi.handlers["before_agent_start"].length, 1);
 
   // 3. 9 slash commands (4 from v0.1.0 + 3 from v0.1.1 + 2 from v0.2.0)
-  assert.equal(Object.keys(pi.commands).length, 9, "exactly 9 commands must be registered");
+  assert.equal(Object.keys(pi.commands).length, 10, "exactly 10 commands must be registered");
   for (const name of [
     "caduceus:status",
     "caduceus:mode",

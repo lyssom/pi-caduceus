@@ -45,3 +45,24 @@ export class CaduceusLintError extends CaduceusError {
     this.issueCount = issueCount;
   }
 }
+
+
+export class CaduceusProfileNotFoundError extends CaduceusError {
+  readonly name: string;
+
+  constructor(name: string) {
+    super(`Profile not found: ${name}`, "CADUCEUS_PROFILE_NOT_FOUND");
+    this.name = "CaduceusProfileNotFoundError";
+    this.name = name;
+  }
+}
+
+export class CaduceusProfileError extends CaduceusError {
+  readonly path: string;
+
+  constructor(message: string, path: string) {
+    super(message, "CADUCEUS_PROFILE_ERROR");
+    this.name = "CaduceusProfileError";
+    this.path = path;
+  }
+}

@@ -58,6 +58,12 @@ export type CommandDeps = {
     locale: string;
     cwd: string;
   }) => { ok: boolean; diff: string; leftName: string; rightName: string };
+      // v0.4.0 additions (profiles):
+      listProfiles: (cwd: string) => string[];
+      loadProfile: (name: string, cwd: string) =>
+        { mode: "default" | "plain" | "auto"; locale: string; systemPromptMode: "append" | "replace"; persona: string };
+      saveProfile: (name: string, profile: { mode: "default" | "plain" | "auto"; locale: string; systemPromptMode: "append" | "replace"; persona: string }, cwd: string) => Promise<void>;
+      deleteProfile: (name: string, cwd: string) => Promise<void>;
 };
 
 // ---------------------------------------------------------------------------
@@ -291,6 +297,66 @@ export function registerSlashCommands(
       ctx.ui.notify(lines.join("\n"), "warning");
     },
   });
+      // /caduceus:profile ----------------------------------------------------
+      pi.registerCommand("caduceus:profile", {
+        description: "Save/load/list/delete/show config profiles. Usage: /caduceus:profile <list|save|load|delete|show> <name>.",
+        handler: async (args: string, ctx: ExtensionCommandContext) => {
+          const tokens = args.trim().split(/\s+/);
+          const subcommand = tokens[0] ?? "";
+          const name = tokens[1] ?? "";
+          if (subcommand === "") {
+            ctx.ui.notify("usage: /caduceus:profile <list|save|load|delete|show> <name>", "info");
+            return;
+          }
+          try {
+            if (subcommand === "list") {
+              const names = deps.listProfiles(ctx.cwd);
+              const lines = ["profiles:", ...names.map((n) => `  - ${n}`)];
+              ctx.ui.notify(lines.join("\n"), "info");
+              return;
+            }
+            if (subcommand === "show") {
+              if (name === "") { ctx.ui.notify("usage: /caduceus:profile show <name>", "info"); return; }
+              const profile = deps.loadProfile(name, ctx.cwd);
+              ctx.ui.notify(JSON.stringify(profile, null, 2), "info");
+              return;
+            }
+            if (subcommand === "save") {
+              if (name === "") { ctx.ui.notify("usage: /caduceus:profile save <name>", "info"); return; }
+              const { config } = deps.readConfig(ctx.cwd);
+              await deps.saveProfile(name, {
+                mode: config.mode, locale: config.locale,
+                systemPromptMode: config.systemPromptMode, persona: config.persona,
+              }, ctx.cwd);
+              ctx.ui.notify(`profile '${name}' saved`, "info");
+              return;
+            }
+            if (subcommand === "load") {
+              if (name === "") { ctx.ui.notify("usage: /caduceus:profile load <name>", "info"); return; }
+              const profile = deps.loadProfile(name, ctx.cwd);
+              await deps.writeGlobalConfigField("mode", profile.mode);
+              await deps.writeGlobalConfigField("locale", profile.locale);
+              await deps.writeGlobalConfigField("systemPromptMode", profile.systemPromptMode);
+              await deps.writeGlobalConfigField("persona", profile.persona);
+              ctx.ui.notify(`profile '${name}' loaded`, "info");
+              return;
+            }
+            if (subcommand === "delete") {
+              if (name === "") { ctx.ui.notify("usage: /caduceus:profile delete <name>", "info"); return; }
+              await deps.deleteProfile(name, ctx.cwd);
+              ctx.ui.notify(`profile '${name}' deleted`, "info");
+              return;
+            }
+            ctx.ui.notify(
+              `usage: /caduceus:profile <list|save|load|delete|show> <name> (got "${subcommand}")`,
+              "info",
+            );
+          } catch (err) {
+            ctx.ui.notify(`profile error: ${(err as Error).message}`, "warning");
+          }
+        },
+      });
+
 pi.registerCommand("caduceus:create", {
   description: "Create a new persona from a name and description. Usage: /caduceus:create <name> <description...>",
   handler: async (args, ctx) => {

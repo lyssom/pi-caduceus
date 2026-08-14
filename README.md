@@ -82,6 +82,7 @@ Compare two personas:
 | `/caduceus:lint` | Run static checks on the active persona. |
 | `/caduceus:create <name> <description>` | Generate a new persona file from a name and description. |
 | `/caduceus:diff [a [b]]` | Diff two personas (defaults: active vs default). |
+| `/caduceus:profile <list\|save\|load\|delete\|show> <name>` | Save/load/list/delete/show config profiles. |
 
 ## Built-in Personas
 
@@ -108,6 +109,50 @@ Add your own by dropping a markdown file at
 # Lints the result, writes to ./.caduceus/personas/wizard.md
 # Switch with: /caduceus:persona wizard
 ```
+
+## Profiles
+
+Save and load whole config sets as named profiles. Profiles
+live in `~/.pi/agent/caduceus/profiles/<name>.json` (global) or
+`.caduceus/profiles/<name>.json` (project).
+
+```bash
+/caduceus:profile save work
+# Saves the current effective config as "work"
+
+/caduceus:profile load learning
+# Loads "learning" — updates mode, locale, systemPromptMode, persona
+# atomically. v0.2.0 names in the loaded profile are auto-migrated
+# to v0.3.x names.
+
+/caduceus:profile list
+# Shows all available profiles (project shadows global)
+
+/caduceus:profile show work
+# Displays the contents of the "work" profile
+
+/caduceus:profile delete work
+# Removes the "work" profile
+```
+
+## Persona macros
+
+Persona files can reference context-aware placeholders that
+are resolved at render time. Supported macros:
+
+| Macro | Value |
+|---|---|
+| `${userName}` | OS user (`$USER` or `$USERNAME`, falls back to `"user"`) |
+| `${projectName}` | basename of current working directory |
+| `${cwd}` | full current working directory path |
+| `${date}` | today, ISO format (`YYYY-MM-DD`) |
+| `${os}` | `process.platform` (`linux`, `darwin`, etc.) |
+| `${mode}` | current persona mode (e.g., `default`, `plain`, `auto`) |
+
+The `default` persona uses `${projectName}` to greet the user with
+the project name. The lint warns on unknown macros but does not
+fail.
+
 
 ## What caduceus is NOT
 

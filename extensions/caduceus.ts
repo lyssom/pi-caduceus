@@ -36,6 +36,12 @@ import {
   type LoadedPersona,
 } from "../lib/persona-loader.ts";
 import { lintPersonaContent } from "../lib/lint.ts";
+import {
+  listProfiles as listProfilesFn,
+  loadProfile as loadProfileFn,
+  saveProfile as saveProfileFn,
+  deleteProfile as deleteProfileFn,
+} from "../lib/profile-store.ts";
 import { personaDiff } from "../lib/diff.ts";
 import {
   validateStep as validateWizardStep,
@@ -193,6 +199,17 @@ export default function caduceus(pi: ExtensionAPI): void {
     },
     getActivePersonaName: () =>
       loadedPersona?.name ?? DEFAULT_CONFIG.persona,
+getActivePersonaName: () =>
+      loadedPersona?.name ?? DEFAULT_CONFIG.persona,
+        // v0.4.0 profiles:
+        listProfiles: (cwd: string) => listProfilesFn(cwd),
+        loadProfile: (name: string, cwd: string) => loadProfileFn(name, cwd),
+        saveProfile: (
+          name: string,
+          profile: { mode: "default" | "plain" | "auto"; locale: string; systemPromptMode: "append" | "replace"; persona: string },
+          cwd: string,
+        ) => saveProfileFn(name, profile, cwd),
+        deleteProfile: (name: string, cwd: string) => deleteProfileFn(name, cwd),
     // v0.2.0 wizard:
     validateWizardStep,
     generateWizardContent,

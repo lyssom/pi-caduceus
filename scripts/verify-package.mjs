@@ -106,7 +106,9 @@ check("test files exist (10 expected)", () => {
     "tests/prompt-mode.test.ts",
     "tests/wizard.test.ts",
     "tests/diff.test.ts",
-  ];
+        "tests/macros.test.ts",
+        "tests/profile-store.test.ts",
+      ];
   // v0.3.0: removed tests/language-clause.test.ts (lib/language-clause.ts was
   // deleted in the brand-independence rebrand). The test count is now 10.
   const missing = expected.filter((p) => !existsSync(join(root, p)));
@@ -114,7 +116,7 @@ check("test files exist (10 expected)", () => {
     fail("test files exist", `missing: ${missing.join(", ")}`);
     return;
   }
-  pass("test files exist (11 expected)");
+  pass("test files exist (13 expected)");
 });
 
 check("dependencies and devDependencies are empty", () => {

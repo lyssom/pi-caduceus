@@ -2,6 +2,80 @@
 
 All notable changes to **caduceus** are documented here.
 
+## [0.4.0] - 2026-08-12 — Profiles + Persona Macros
+
+### Added
+
+- **Profile system** — save and load whole config sets as named
+  profiles. Lets users switch between work / learning / code-review
+  caduceus configurations with one command.
+  - Storage: `~/.pi/agent/caduceus/profiles/<name>.json` (global)
+  - Storage: `<cwd>/.caduceus/profiles/<name>.json` (project)
+  - Precedence: project > global (project shadows global)
+  - **5 new slash commands:**
+    - `/caduceus:profile list` — show all available profiles
+    - `/caduceus:profile save <name>` — save current config
+    - `/caduceus:profile load <name>` — load a profile (writes 4 fields)
+    - `/caduceus:profile delete <name>` — delete a profile
+    - `/caduceus:profile show <name>` — show a profile's contents
+  - Profile format is a subset of `CaduceusConfig` (mode, locale,
+    systemPromptMode, persona)
+- **Persona macros** — runtime substitution of context-aware
+  placeholders in persona markdown files.
+  - `${userName}` → OS user (from `$USER` or `$USERNAME`, falls back to `"user"`)
+  - `${projectName}` → basename of `process.cwd()`
+  - `${cwd}` → current working directory
+  - `${date}` → today's date in ISO format (`YYYY-MM-DD`)
+  - `${os}` → `process.platform`
+  - Resolution happens at the extension entry's `before_agent_start`
+  - The default persona gained 1 macro reference (`${projectName}`)
+    to demonstrate the feature
+
+### Changed
+
+- **Lint check `MODE_PLACEHOLDER` renamed to `PLACEHOLDER`** with
+  stricter semantics: requires `${mode}` to be present AND warns
+  on any unknown `${...}` macro.
+- **Built-in default persona** has 1 new macro reference
+  (`${projectName}` in the persona block).
+- **`/caduceus:status` does not show profile state** (profiles are
+  a separate concept; use `/caduceus:profile list`).
+
+### Test count
+
+- v0.3.1: 156 tests across 11 files
+- v0.4.0: 186 tests across 13 files (+30 tests for profiles + macros)
+
+### Backward compatibility
+
+- All v0.3.1 config files continue to work (migrations still apply).
+- All v0.3.1 slash commands work unchanged.
+- The 10 built-in personas are unchanged except for the 1 macro
+  reference in `default.md`. Lint passes on all of them.
+- 0 runtime dependencies (still).
+
+## [0.3.1] - 2026-08-12
+
+### Fixed
+
+- **`/caduceus:mode` and `/caduceus:persona` accept old names** with a
+  one-time deprecation warning. Previously, typing
+  `/caduceus:mode gentleman` was rejected with a usage hint. Now it
+  emits `caduceus: mode "gentleman" is deprecated; using "default"
+  instead.` and proceeds with the new name. Same for `neutral` →
+  `plain` (mode) and `gentleman` → `default` / `neutral` → `plain`
+  (persona).
+- **Stale docstring** in `lib/persona-contract.ts`: removed the
+  `// auto maps to "gentleman"` reference (v0.3.0 maps auto to
+  `default`).
+
+### Test count
+
+- v0.3.0: 152 tests
+- v0.3.1: 156 tests (+4 deprecation tests)
+
+
+
 ## [0.3.1] - 2026-08-12
 
 ### Fixed

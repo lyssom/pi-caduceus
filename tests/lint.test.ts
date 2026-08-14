@@ -223,6 +223,29 @@ test("R-LINT-T1: synthetic good persona body passes lint", () => {
   assert.equal(result.passed, true, JSON.stringify(result.issues, null, 2));
 });
 
+test("v0.4.0: persona with unknown macro gets PLACEHOLDER warning", () => {
+  const testContent = [
+    "${mode}",
+    "## caduceus Identity Contract",
+    "You are running under **caduceus**.",
+    "Identity contract:",
+    "- Foo.",
+    "## Persona",
+    "Persona:",
+    "- Foo.",
+    "## Harness principles",
+    "Harness principles:",
+    "- Foo.",
+    "## ${futureMacro}",
+  ].join("\n");
+  const result = lintPersonaContent(testContent, "test");
+  assert.equal(result.passed, true, "warning should not fail lint");
+  const warn = result.issues.find((i) => i.check === "PLACEHOLDER");
+  assert.ok(warn, "expected PLACEHOLDER warning for unknown macro");
+  assert.equal(warn?.severity, "warning");
+  assert.match(warn?.message ?? "", /unknown macro/i);
+});
+
 test("R-LINT-T2: persona with future-year content (2099) is flagged for unexpected content", () => {
   // The lint shouldn't specifically flag future years (that's not a
   // documented check), but we ensure it doesn't crash and the

@@ -712,3 +712,115 @@ test("v0.3.0: /caduceus:persona neutral is deprecated and maps to plain", async 
   assert.match(notifications[0].message, /plain/);
   assert.equal(writes.find((w) => w.field === "persona")?.value, "plain");
 });
+
+
+// ---------------------------------------------------------------------------
+// v0.4.0 — /caduceus:profile
+// ---------------------------------------------------------------------------
+
+test("v0.4.0: /caduceus:profile list shows available profiles", async () => {
+  const pi = makeMockPi();
+  const { ctx, notifications } = makeMockCtx();
+  const deps = makeMockDeps({
+    listProfiles: () => ["work", "learning"],
+  });
+  registerSlashCommands(pi, deps);
+
+  await pi.commands["caduceus:profile"].handler("list", ctx);
+
+  assert.equal(notifications.length, 1);
+  assert.match(notifications[0].message, /profiles:/);
+  assert.match(notifications[0].message, /work/);
+  assert.match(notifications[0].message, /learning/);
+});
+
+test("v0.4.0: /caduceus:profile save writes via saveProfile and readConfig", async () => {
+  const pi = makeMockPi();
+  const { ctx, notifications } = makeMockCtx();
+  let savedProfile: { mode: "default" | "plain" | "auto"; locale: string; systemPromptMode: "append" | "replace"; persona: string } | null = null;
+  const deps = makeMockDeps({
+    saveProfile: async (name, profile) => {
+      savedProfile = profile;
+    },
+  });
+  registerSlashCommands(pi, deps);
+
+  await pi.commands["caduceus:profile"].handler("save work", ctx);
+
+  assert.ok(savedProfile, "saveProfile should have been called");
+  assert.equal(notifications.length, 1);
+  assert.match(notifications[0].message, /profile 'work' saved/);
+});
+
+test("v0.4.0: /caduceus:profile load updates config via writeGlobalConfigField", async () => {
+  const pi = makeMockPi();
+  const { ctx, notifications } = makeMockCtx();
+  const writes: Array<{ field: string; value: unknown }> = [];
+  const deps = makeMockDeps({
+    loadProfile: () => ({
+      mode: "plain" as const,
+      locale: "es-AR",
+      systemPromptMode: "replace" as const,
+      persona: "plain",
+    }),
+    writeGlobalConfigField: async (field, value) => {
+      writes.push({ field: String(field), value });
+    },
+  });
+  registerSlashCommands(pi, deps);
+
+  await pi.commands["caduceus:profile"].handler("load work", ctx);
+
+  // 4 writes (mode, locale, systemPromptMode, persona)
+  assert.equal(writes.length, 4);
+  assert.equal(writes[0].value, "plain");
+  assert.equal(writes[3].value, "plain");
+  assert.match(notifications[0].message, /profile 'work' loaded/);
+});
+
+test("v0.4.0: /caduceus:profile delete calls deleteProfile", async () => {
+  const pi = makeMockPi();
+  const { ctx, notifications } = makeMockCtx();
+  let deletedName = "";
+  const deps = makeMockDeps({
+    deleteProfile: async (name) => {
+      deletedName = name;
+    },
+  });
+  registerSlashCommands(pi, deps);
+
+  await pi.commands["caduceus:profile"].handler("delete work", ctx);
+
+  assert.equal(deletedName, "work");
+  assert.match(notifications[0].message, /profile 'work' deleted/);
+});
+
+test("v0.4.0: /caduceus:profile show displays the profile contents", async () => {
+  const pi = makeMockPi();
+  const { ctx, notifications } = makeMockCtx();
+  const deps = makeMockDeps({
+    loadProfile: () => ({
+      mode: "default" as const,
+      locale: "auto",
+      systemPromptMode: "append" as const,
+      persona: "default",
+    }),
+  });
+  registerSlashCommands(pi, deps);
+
+  await pi.commands["caduceus:profile"].handler("show work", ctx);
+
+  assert.equal(notifications.length, 1);
+  assert.match(notifications[0].message, /persona/);
+  assert.match(notifications[0].message, /default/);
+});
+
+test("v0.4.0: /caduceus:profile with no args shows usage hint", async () => {
+  const pi = makeMockPi();
+  const { ctx, notifications } = makeMockCtx();
+  registerSlashCommands(pi, makeMockDeps());
+
+  await pi.commands["caduceus:profile"].handler("", ctx);
+
+  assert.match(notifications[0].message, /usage: \/caduceus:profile/);
+});
