@@ -149,13 +149,23 @@ const CONSTITUTION_CWE_MAPPING_CHECK: ConstitutionLintCheck = {
     const principles = parsePrinciples(markdown);
     const violations: LintViolation[] = [];
     for (const p of principles) {
-      if (p.level === "MUST" && !p.hasCwe) {
+      // Warn for MUST-level principles lacking CWE.
+      // Also warn for invalid levels (not RFC 2119, not MAY): the user
+      // clearly intended a binding constraint (RECOMMENDED, etc.) and
+      // the RFC2119 check will fire separately, but a missing CWE is
+      // still a smell worth flagging.
+      const isMust =
+        p.level.startsWith("MUST") || p.level.startsWith("SHALL");
+      const isInvalidNonMay =
+        !RFC_2119_KEYWORDS.has(p.level) && p.level !== "";
+      if ((isMust || isInvalidNonMay) && !p.hasCwe) {
         violations.push({
           checkId: "CONSTITUTION_CWE_MAPPING",
           severity: "warning",
           message:
-            `MUST-level principle ${p.id} lacks a CWE field. ` +
-            `SHOULD provide a CWE-NNN reference (or 'CWE: N/A' explicitly).`,
+            `Principle ${p.id} (Level: '${p.level || "(empty)"}') ` +
+            `lacks a CWE field. SHOULD provide a CWE-NNN reference ` +
+            `(or 'CWE: N/A' explicitly).`,
           location: p.id,
         });
       }
@@ -178,8 +188,14 @@ const CONSTITUTION_COUNT_CHECK: ConstitutionLintCheck = {
         },
       ];
     }
-    const hasBinding = principles.some((p) => isBindingLevel(p.level));
-    if (!hasBinding) {
+    // Fire "MAY-only" warning only if EVERY principle has an explicit MAY
+    // level. Invalid levels (RECOMMENDED, etc.) are NOT counted as MAY;
+    // the RFC2119 check fires for those, and we don't want to double-warn
+    // for the same root cause.
+    const allExplicitlyMay = principles.every(
+      (p) => p.level === "MAY" || p.level === "MAY NOT",
+    );
+    if (allExplicitlyMay) {
       return [
         {
           checkId: "CONSTITUTION_COUNT",
