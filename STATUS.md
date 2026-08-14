@@ -338,7 +338,8 @@ decisions are appended to this list.
  | 2026-08 (v0.5.0) | Reference-but-not-bridge policy for external pi packages | Brand independence (extends v0.3.0 decision) |
  | 2026-08 (v0.5.0) | Constitution pattern adopted for change-level constraints | Marri 2026 Constitutional SDD pattern, lighter than state machine enforcement |
  | 2026-08 (v0.5.0) | Slash command grouping: flat for existing, grouped for new | Backward compat + progressive enhancement |
- 
+ | 2026-08-14 (caduceus-v0.5.0-lifecycle-foundation) | archived via sdd-archive | _via sdd-archive_ |
+
 ## 9. What this document is NOT
 
 - **Not a marketing page.** That's the README.

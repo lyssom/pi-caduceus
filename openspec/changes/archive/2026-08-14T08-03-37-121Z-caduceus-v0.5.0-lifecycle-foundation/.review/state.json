@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "changeId": "caduceus-v0.5.0-lifecycle-foundation",
+  "state": "validated",
+  "lensRuns": [
+    {
+      "lensId": "spec-compliance",
+      "status": "queued",
+      "personaRequired": true,
+      "findingsCount": 0,
+      "startedAt": null,
+      "completedAt": null
+    },
+    {
+      "lensId": "risk",
+      "status": "queued",
+      "personaRequired": true,
+      "findingsCount": 0,
+      "startedAt": null,
+      "completedAt": null
+    }
+  ],
+  "personaSnapshot": {
+    "activePersona": "architect",
+    "mode": "default",
+    "locale": "auto"
+  },
+  "lastTransitionAt": "2026-08-14T08:03:37.120Z",
+  "transitionHistory": [
+    {
+      "from": "idle",
+      "to": "started",
+      "at": "2026-08-14T08:03:37.117Z"
+    },
+    {
+      "from": "started",
+      "to": "in-review",
+      "at": "2026-08-14T08:03:37.118Z"
+    },
+    {
+      "from": "in-review",
+      "to": "finalized",
+      "at": "2026-08-14T08:03:37.119Z"
+    },
+    {
+      "from": "finalized",
+      "to": "validated",
+      "at": "2026-08-14T08:03:37.120Z"
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "changeId": "caduceus-v0.5.0-lifecycle-foundation",
+  "contentHash": "sha256:a12f90877fad1da552cd59130d871d154fdf3be49eb0309a6235a25b8e1f6ab6",
+  "lensRuns": [],
+  "personaSnapshot": {
+    "activePersona": "architect",
+    "mode": "default",
+    "locale": "auto"
+  },
+  "finalVerificationPassed": true,
+  "createdAt": "2026-08-14T08:03:37.119Z",
+  "finalizedAt": "2026-08-14T08:03:37.119Z",
+  "validatedAt": null
+}
