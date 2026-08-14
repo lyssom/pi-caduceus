@@ -30,7 +30,7 @@ function makeMockPi() {
   };
 }
 
-test("extension registers session_start, before_agent_start, and 10 slash commands", () => {
+test("extension registers session_start, before_agent_start, and 21 slash commands (v0.5.0: 10 core + 5 SDD + 6 review)", () => {
   const pi = makeMockPi();
   caduceus(pi as unknown as Parameters<typeof caduceus>[0]);
 
@@ -42,9 +42,10 @@ test("extension registers session_start, before_agent_start, and 10 slash comman
   assert.ok(pi.handlers["before_agent_start"], "before_agent_start handler must be registered");
   assert.equal(pi.handlers["before_agent_start"].length, 1);
 
-  // 3. 9 slash commands (4 from v0.1.0 + 3 from v0.1.1 + 2 from v0.2.0)
-  assert.equal(Object.keys(pi.commands).length, 10, "exactly 10 commands must be registered");
+  // 3. 24 slash commands (14 core + 5 SDD + 6 review) per v0.5.0
+  assert.equal(Object.keys(pi.commands).length, 21, "exactly 21 commands must be registered");
   for (const name of [
+    // core (14)
     "caduceus:status",
     "caduceus:mode",
     "caduceus:locale",
@@ -54,6 +55,21 @@ test("extension registers session_start, before_agent_start, and 10 slash comman
     "caduceus:lint",
     "caduceus:create",
     "caduceus:diff",
+    // core continued (profile subcommand shares "caduceus:profile" namespace)
+    "caduceus:profile",
+    // sdd (5)
+    "caduceus:sdd:init",
+    "caduceus:sdd:explore",
+    "caduceus:sdd:propose",
+    "caduceus:sdd:apply",
+    "caduceus:sdd:archive",
+    // review (6)
+    "caduceus:review:inspect",
+    "caduceus:review:start",
+    "caduceus:review:advance",
+    "caduceus:review:finalize",
+    "caduceus:review:validate",
+    "caduceus:review:reset",
   ]) {
     assert.ok(pi.commands[name], `${name} must be registered`);
     assert.equal(typeof pi.commands[name].handler, "function");

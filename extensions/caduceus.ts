@@ -5,11 +5,10 @@
 // this is the SHELL: it talks to pi. All other modules are MEAT: pure,
 // testable, independent of pi's runtime.
 //
-// Wires 7 slash commands + 2 events:
-//   1. session_start       — read config, set status bar (if showStatusBar)
-//   2. before_agent_start  — inject the persona segment into the system prompt
-//                            (append or replace mode)
-//   3-9. slash commands    — status, mode, locale, prompt, persona, inspect, lint
+// v0.5.0 wiring: registers 21 slash commands across 3 sub-modules:
+//   - lib/slash-commands-core.ts    (14 v0.1.0–v0.4.0 commands)
+//   - lib/slash-commands-sdd.ts     (5 new SDD commands)
+//   - lib/slash-commands-review.ts  (6 new review commands)
 // ---------------------------------------------------------------------------
 
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
@@ -26,9 +25,24 @@ import {
 import { buildPersonaPrompt } from "../lib/persona-contract.ts";
 import { detectLocale, type ResolvedLocale } from "../lib/locale-detect.ts";
 import {
-  registerSlashCommands,
+  registerAllSlashCommands,
   defaultRenderInspectOutput,
 } from "../lib/slash-commands.ts";
+import {
+  sddInit,
+  sddExplore,
+  sddPropose,
+  sddApply,
+  sddArchive,
+  readActiveChange,
+} from "../lib/sdd-flow.ts";
+import {
+  inspectReview,
+  startReview,
+  advanceReview,
+  finalizeReview,
+  validateReview,
+} from "../lib/review-state-machine.ts";
 import { composeSystemPrompt } from "../lib/prompt-mode.ts";
 import {
   loadPersona,
@@ -92,7 +106,7 @@ export default function caduceus(pi: ExtensionAPI): void {
     try {
       loadedPersona = loadPersona(effective.config.persona, ctx.cwd);
     } catch (err) {
-      // Persona not found — fall back to default and notify
+      // PersonaNot found — fall back to default and notify
       ctx.ui.notify(
         `caduceus: persona '${effective.config.persona}' not found, using 'default'`,
         "warning",
@@ -152,71 +166,95 @@ export default function caduceus(pi: ExtensionAPI): void {
   });
 
   // -----------------------------------------------------------------------
-  // 3-9. Slash commands
+  // 3-9. Slash commands (21 total: 10 core + 5 SDD + 6 review)
   // -----------------------------------------------------------------------
-  registerSlashCommands(pi, {
-    readConfig: (cwd: string) =>
-      effective ?? readConfig({ cwd }),
-    buildPersonaPrompt,
-    writeGlobalConfigField,
-    getStatusLine: (cfg) =>
-      `caduceus · ${cfg.mode} · ${cfg.locale}`,
-    renderInspectOutput: defaultRenderInspectOutput,
-    // v0.1.1:
-    listPersonas: (cwd: string) => listPersonas(cwd),
-    switchPersona: async (name: PersonaName) => {
-      // 1. Re-load the persona content (validates it exists)
-      const p = loadPersona(name, cwd ?? process.cwd());
-      loadedPersona = p;
-      // 2. Persist the choice to global config
-      await writeGlobalConfigField("persona", name);
-      // 3. Update the effective config snapshot
-      if (effective) {
-        effective = {
-          config: { ...effective.config, persona: name },
-          source: effective.source,
-        };
-      }
+  registerAllSlashCommands(pi, {
+    core: {
+      readConfig: (cwd: string) => effective ?? readConfig({ cwd }),
+      buildPersonaPrompt,
+      writeGlobalConfigField,
+      getStatusLine: (cfg) => `caduceus · ${cfg.mode} · ${cfg.locale}`,
+      renderInspectOutput: defaultRenderInspectOutput,
+      // v0.1.1:
+      listPersonas: (cwd: string) => listPersonas(cwd),
+      switchPersona: async (name: PersonaName) => {
+        // 1. Re-load the persona content (validates it exists)
+        const p = loadPersona(name, cwd ?? process.cwd());
+        loadedPersona = p;
+        // 2. Persist the choice to global config
+        await writeGlobalConfigField("persona", name);
+        // 3. Update the effective config snapshot
+        if (effective) {
+          effective = {
+            config: { ...effective.config, persona: name },
+            source: effective.source,
+          };
+        }
+      },
+      setSystemPromptMode: async (mode: SystemPromptMode) => {
+        systemPromptMode = mode;
+        await writeGlobalConfigField("systemPromptMode", mode);
+        if (effective) {
+          effective = {
+            config: { ...effective.config, systemPromptMode: mode },
+            source: effective.source,
+          };
+        }
+      },
+      lintActivePersona: () => {
+        if (!loadedPersona) {
+          return { passed: true, issues: [] };
+        }
+        return lintPersonaContent(loadedPersona.content, loadedPersona.name);
+      },
+      getActivePersonaName: () =>
+        loadedPersona?.name ?? DEFAULT_CONFIG.persona,
+      // v0.4.0 profiles:
+      listProfiles: (cwd: string) => listProfilesFn(cwd),
+      loadProfile: (name: string, cwd: string) => loadProfileFn(name, cwd),
+      saveProfile: (
+        name: string,
+        profile: {
+          mode: "default" | "plain" | "auto";
+          locale: string;
+          systemPromptMode: "append" | "replace";
+          persona: string;
+        },
+        cwd: string,
+      ) => saveProfileFn(name, profile, cwd),
+      deleteProfile: (name: string, cwd: string) => deleteProfileFn(name, cwd),
+      // v0.2.0 wizard:
+      validateWizardStep,
+      generateWizardContent,
+      wizardFilePath,
+      writeAndLint,
+      // v0.2.0 diff:
+      personaDiff,
     },
-    setSystemPromptMode: async (mode: SystemPromptMode) => {
-      systemPromptMode = mode;
-      await writeGlobalConfigField("systemPromptMode", mode);
-      if (effective) {
-        effective = {
-          config: { ...effective.config, systemPromptMode: mode },
-          source: effective.source,
-        };
-      }
+    sdd: {
+      sddInit,
+      sddExplore,
+      sddPropose,
+      sddApply,
+      sddArchive,
+      readActiveChange,
     },
-    lintActivePersona: () => {
-      if (!loadedPersona) {
-        return {
-          passed: true,
-          issues: [],
-        };
-      }
-      return lintPersonaContent(loadedPersona.content, loadedPersona.name);
+    review: {
+      inspectReview,
+      startReview,
+      advanceReview,
+      finalizeReview,
+      validateReview,
+      // resetReview: full archive+clear logic is exposed in v0.6.x.
+      // Phase A exposes a no-op stub via the slash command's own
+      // state-corruption check (design.md §12 R3); the slash command
+      // reports "nothing to reset" when the state is not corrupted.
+      resetReview: (_changeName: string, _cwd: string) => ({ ok: false }),
+      inspectIsCorrupted: (changeName: string, cwd: string) =>
+        inspectReview(changeName, cwd).state === "corrupted",
+      getActivePersonaName: () =>
+        loadedPersona?.name ?? DEFAULT_CONFIG.persona,
     },
-    getActivePersonaName: () =>
-      loadedPersona?.name ?? DEFAULT_CONFIG.persona,
-getActivePersonaName: () =>
-      loadedPersona?.name ?? DEFAULT_CONFIG.persona,
-        // v0.4.0 profiles:
-        listProfiles: (cwd: string) => listProfilesFn(cwd),
-        loadProfile: (name: string, cwd: string) => loadProfileFn(name, cwd),
-        saveProfile: (
-          name: string,
-          profile: { mode: "default" | "plain" | "auto"; locale: string; systemPromptMode: "append" | "replace"; persona: string },
-          cwd: string,
-        ) => saveProfileFn(name, profile, cwd),
-        deleteProfile: (name: string, cwd: string) => deleteProfileFn(name, cwd),
-    // v0.2.0 wizard:
-    validateWizardStep,
-    generateWizardContent,
-    wizardFilePath,
-    writeAndLint,
-    // v0.2.0 diff:
-    personaDiff,
   });
 }
 

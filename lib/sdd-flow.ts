@@ -98,6 +98,26 @@ function archiveDirFor(cwd: string): string {
 
 type SddState = { activeChange: string | null };
 
+/**
+ * Read the active change name from `~/.pi/agent/caduceus/state.json`.
+ * Returns null if no state file exists or it is malformed.
+ *
+ * Exported (rather than kept internal to this module) so that the
+ * slash-command wiring in extensions/caduceus.ts and the tests in
+ * tests/slash-commands-sdd.test.ts can share a single source of truth.
+ */
+export function readActiveChange(home?: string): string | null {
+  const h = resolveHome(home);
+  const p = statePathFor(h);
+  if (!existsSync(p)) return null;
+  try {
+    const parsed = JSON.parse(readFileSync(p, "utf8")) as SddState;
+    return parsed.activeChange ?? null;
+  } catch {
+    return null;
+  }
+}
+
 function readState(home: string): SddState {
   const p = statePathFor(home);
   if (!existsSync(p)) return { activeChange: null };
