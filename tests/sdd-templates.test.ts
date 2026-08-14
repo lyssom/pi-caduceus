@@ -179,11 +179,11 @@ test("T02-R-TPL-10: renderTemplate substitutes changeName into output", () => {
 
 test("T02-R-TPL-11: proposal template has SDD canonical section structure", () => {
   const out = renderTemplate("proposal", CTX);
-  // Standard SDD proposal sections
-  assert.match(out, /^# .+ v\d+\.\d+\.\d+ —/m, "missing versioned title");
-  assert.match(out, /^## Intent/m);
-  assert.match(out, /^## Why now/m);
-  assert.match(out, /^## Scope/m);
+  // Numbered section headings (matches v0.4.0 proposal convention)
+  assert.match(out, /^# caduceus v0\.5\.0 —/m, "missing versioned title");
+  assert.match(out, /^## 1\. Intent/m);
+  assert.match(out, /^## 2\. Why now/m);
+  assert.match(out, /^## 3\. Scope/m);
 });
 
 // ---------------------------------------------------------------------------

@@ -46,6 +46,19 @@ export class CaduceusLintError extends CaduceusError {
   }
 }
 
+export class CaduceusTemplateError extends CaduceusError {
+  readonly templateId: string;
+
+  constructor(templateId: string, message?: string) {
+    super(
+      message ?? `Unknown template id: '${templateId}'`,
+      "CADUCEUS_TEMPLATE_ERROR",
+    );
+    this.name = "CaduceusTemplateError";
+    this.templateId = templateId;
+  }
+}
+
 
 export class CaduceusProfileNotFoundError extends CaduceusError {
   readonly name: string;
