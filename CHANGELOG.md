@@ -2,6 +2,94 @@
 
 All notable changes to **caduceus** are documented here.
 
+## [0.5.0] - 2026-08-14 — Lifecycle Foundation (MAJOR)
+
+caduceus evolves from a focused persona-contract layer to a
+**persona-aware general-purpose lifecycle harness** for the pi
+coding agent. DNA-3 is amended: "Light by default" becomes
+"Light at the core, evolve into persona-aware harness, compose
+internally only".
+
+### Added
+
+- **SDD commands (5)** — full OpenSpec-style change lifecycle in the
+  pi session:
+  - `/caduceus:sdd:init <name>` — create `openspec/changes/<name>/`
+    with 5 MD templates (proposal, design, tasks, requirements,
+    constitution); sets `activeChange` in
+    `~/.pi/agent/caduceus/state.json`
+  - `/caduceus:sdd:explore <topic>` — return requirements.md skeleton
+    for the active change
+  - `/caduceus:sdd:propose <name>` — render proposal.md from the
+    requirements context
+  - `/caduceus:sdd:apply` — mark completed task checkboxes in
+    tasks.md (idempotent)
+  - `/caduceus:sdd:archive` — move the change to
+    `openspec/changes/archive/<ISO-timestamp>-<name>/`; requires
+    a finalized receipt with `finalVerificationPassed: true`
+
+- **Review commands (6)** — 6-state machine with content-bound
+  JSON receipts (no crypto signing; SHA-256 over the 5 MD files):
+  - `/caduceus:review:inspect <change>` — show current review
+    state snapshot
+  - `/caduceus:review:start <change> [<persona>]` — transition
+    idle → started; persona defaults to active
+  - `/caduceus:review:advance <change> [advance|abandon]` —
+    advance state machine (default: `advance`)
+  - `/caduceus:review:finalize <change>` — transition
+    in-review → finalized; writes content-bound receipt
+  - `/caduceus:review:validate <change>` — re-validate receipt
+    against current artifacts; reports `receiptValid` boolean
+  - `/caduceus:review:reset <change>` — recover from corrupted
+    state.json (archives it and clears state) per design.md §12 R3
+
+- **Artifact templates (5)** — `lib/sdd-templates.ts` byte-stable
+  renderers for the change artifacts. Each carries a
+  `<!-- caduceus:<id>-template-version 0.5.0 -->` marker
+  (design.md §12 R1).
+
+- **Constitution lint (5 checks)** — `lib/constitution-lint.ts`:
+  - `CONSTITUTION_EXISTS`
+  - `CONSTITUTION_RFC2119` (MUST / SHOULD / MAY / etc.)
+  - `CONSTITUTION_CWE_MAPPING` (MUST-level principles must have CWE)
+  - `CONSTITUTION_COUNT` (0 → error, only-MAY → warning)
+  - `CONSTITUTION_NO_DUPLICATE_IDS`
+
+- **Persona-aware lens routing** — 5 named lens slots
+  (`risk`, `correctness`, `security`, `readability`,
+  `spec-compliance`); 4 binding personas trigger lens requirements
+  (security → [security, risk]; reviewer → [readability,
+  spec-compliance]; architect → [spec-compliance, risk];
+  debugger → [correctness]).
+
+### Refactored
+
+- **slash-commands module split** — `lib/slash-commands.ts` is
+  now a thin dispatcher; 14 existing v0.1.0–v0.4.0 commands moved
+  to `lib/slash-commands-core.ts`. `lib/slash-commands-sdd.ts`
+  and `lib/slash-commands-review.ts` hold the new commands.
+  `registerAllSlashCommands(pi, { core, sdd, review })` registers
+  all 21 v0.5.0 commands in one call.
+
+- **Shared review types** — `lib/review-types.ts` holds
+  `PersonaSnapshot` and `LensRunSummary` (previously in
+  `lib/persona-lens-router.ts`); breaks the 3-level import chain.
+
+### Added (verification)
+
+- **3 new pre-publish checks** in `scripts/verify-package.mjs`
+  (now 17/17):
+  - No import of external pi packages (pi-review, pi-agents,
+    dracond, pi-muselinn-harness) in source
+  - No dependency on external pi packages in package.json
+  - No content fingerprint overlap with forbidden pi packages
+    in `prompts/*.md`
+
+### Test count
+
+- v0.4.0: 152 tests across 10 files
+- **v0.5.0: 309 tests across 18 files (+157 new tests, 0 regressions)**
+
 ## [0.4.0] - 2026-08-12 — Profiles + Persona Macros
 
 ### Added

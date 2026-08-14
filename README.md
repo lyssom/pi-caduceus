@@ -34,8 +34,8 @@ pi install npm:pi-caduceus
 ```
 
 The package registers one extension (`extensions/caduceus.ts`),
-one theme (`themes/caduceus.json`), and contributes to pi's
-slash-command list.
+one theme (`themes/caduceus.json`), and contributes 21 slash commands
+(10 core + 5 SDD + 6 review) to pi's slash-command list.
 
 ## Quick Start
 
@@ -83,6 +83,102 @@ Compare two personas:
 | `/caduceus:create <name> <description>` | Generate a new persona file from a name and description. |
 | `/caduceus:diff [a [b]]` | Diff two personas (defaults: active vs default). |
 | `/caduceus:profile <list\|save\|load\|delete\|show> <name>` | Save/load/list/delete/show config profiles. |
+| `/caduceus:sdd:init <name>` | Initialize a change dir with 5 MD templates. |
+| `/caduceus:sdd:explore <topic>` | Show requirements.md skeleton for the active change. |
+| `/caduceus:sdd:propose <name>` | Generate proposal.md from requirements.md. |
+| `/caduceus:sdd:apply` | Mark completed task checkboxes for the active change. |
+| `/caduceus:sdd:archive` | Move the active change to `openspec/changes/archive/`. |
+| `/caduceus:review:inspect <change>` | Show current review state snapshot. |
+| `/caduceus:review:start <change> [<persona>]` | Start a review; persona defaults to active. |
+| `/caduceus:review:advance <change> [advance\|abandon]` | Advance the review state. |
+| `/caduceus:review:finalize <change>` | Finalize and write content-bound receipt. |
+| `/caduceus:review:validate <change>` | Re-validate receipt against current artifacts. |
+| `/caduceus:review:reset <change>` | Recover from corrupted state.json. |
+
+## Lifecycle Foundation (v0.5.0)
+
+caduceus v0.5.0 ships a **persona-aware general-purpose lifecycle
+harness** for the pi coding agent. The 11 new slash commands
+(5 SDD + 6 review) drive a full OpenSpec-style change lifecycle
+with content-bound JSON receipts — no native binaries, no crypto
+signing.
+
+### SDD commands
+
+```bash
+/caduceus:sdd:init my-feature
+# Creates openspec/changes/my-feature/ with 5 MD templates:
+#   proposal.md, design.md, tasks.md, requirements.md, constitution.md
+
+/caduceus:sdd:explore <topic>
+# Returns the requirements.md skeleton for the active change
+
+/caduceus:sdd:propose my-feature
+# Renders proposal.md from the requirements context
+
+/caduceus:sdd:apply
+# Marks completed task checkboxes (idempotent)
+
+/caduceus:sdd:archive
+# Moves the change to openspec/changes/archive/<ISO-timestamp>-<name>/
+# Requires a finalized receipt (finalVerificationPassed: true)
+```
+
+### Review commands (6-state machine)
+
+```bash
+/caduceus:review:inspect my-feature
+# Show current review state snapshot
+
+/caduceus:review:start my-feature security
+# Transition idle → started; capture persona
+
+/caduceus:review:advance my-feature advance   # or 'abandon'
+# Transition started → in-review (or any → abandoned)
+
+/caduceus:review:finalize my-feature
+# Transition in-review → finalized; write content-bound receipt
+
+/caduceus:review:validate my-feature
+# Re-validate receipt against current artifacts; reports receiptValid
+
+/caduceus:review:reset my-feature
+# Recover from corrupted state.json (per design.md §12 R3)
+```
+
+The receipt is a JSON document with the content hash of the 5 MD
+artifacts, the active persona snapshot, and a verification
+boolean.
+Reing
+Read it back with `/caduceus:review:validate`; modifying any of
+the 5 files invalidates the receipt.
+
+### Persona-aware lens framework
+
+5 lens slots are wired (`risk`, `correctness`, `security`,
+`readability`, `spec-compliance`). 4 of the 10 built-in personas
+trigger lens requirements when they review:
+
+| Persona | Required lenses |
+|---|---|
+| `security` | security, risk |
+| `reviewer` | readability, spec-compliance |
+| `architect` | spec-compliance, risk |
+| `debugger` | correctness |
+
+See design.md §6.3 for the full routing table.
+
+### Constitutional constraints (RFC 2119)
+
+`constitution.md` carries MUST/SHOULD/MAY-level principles. The
+built-in linter enforces:
+
+- `CONSTITUTION_EXISTS` — file is non-empty
+- `CONSTITUTION_RFC2119` — `Level` is a valid RFC 2119 keyword
+- `CONSTITUTION_CWE_MAPPING` — MUST-level principles must have a
+  CWE reference (or explicit `CWE: N/A`)
+- `CONSTITUTION_COUNT` — 0 principles → error; only MAY → warning
+- `CONSTITUTION_NO_DUPLICATE_IDS` — `CON-NNN` IDs must be unique
 
 ## Built-in Personas
 

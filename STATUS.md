@@ -7,10 +7,17 @@
 
 ## 1. What caduceus is
 
-**caduceus is a Persona Contract package for the [pi](https://pi.dev)
-coding agent.** It does one thing and does it well: it injects a
-deterministic, testable, byte-citable persona prompt segment before
-the first token of a pi session, given `(mode, locale)`.
+**caduceus is a persona-aware general-purpose lifecycle harness for
+the [pi](https://pi.dev) coding agent.** It injects a deterministic,
+testable, byte-citable persona prompt segment before the first token
+of a pi session, given `(mode, locale)`, AND drives a full
+Spec-Driven Development lifecycle (explore → propose → apply →
+archive) plus an optional review state machine, with the active
+persona carrying through every phase.
+
+**caduceus references but does not bridge to other pi packages**
+(`pi-review`, `pi-agents`, `dracond`, `pi-muselinn-harness`); it
+ships a complete, independent implementation.
 
 **caduceus is NOT a fork of gentle-pi.** It was originally inspired
 by gentle-pi's persona layer, but as of v0.3.0, caduceus has shed
@@ -38,7 +45,7 @@ are **independent and benchmark each other**, not derivatives.
    harness"      layer"
 ```
 
-## 2. v0.4.0 snapshot (current shipped release)
+## 2. v0.5.0 snapshot (current shipped release)
 
 | Dimension | Value |
 |---|---|
@@ -54,7 +61,7 @@ are **independent and benchmark each other**, not derivatives.
 | Built-in personas | 10 |
 | Slash commands | 14 |
 
-### 2.1 What ships in v0.4.0
+### 2.1 What ships in v0.5.0
 
 **Personas (10 built-in, all caduceus-original):**
 - `default` — senior developer / architect voice
@@ -91,7 +98,17 @@ are **independent and benchmark each other**, not derivatives.
 
 **Profile system:** save/load/list/delete/show whole config sets; stored at `~/.pi/agent/caduceus/profiles/<name>.json` (global) and `<cwd>/.caduceus/profiles/<name>.md` (project)
 
-**Lint (8 checks):** IDENTITY_BLOCK, PERSONA_BLOCK, PRINCIPLES_BLOCK, NO_TIMESTAMP, PLACEHOLDER (required `${mode}`), CONFLICTING_VOICE_MARKERS, plus 2 more (linter helpers)
+**Lint (persona: 8 + constitution: 5 = 13 checks):**
+    - Persona: IDENTITY_BLOCK, PERSONA_BLOCK, PRINCIPLES_BLOCK, NO_TIMESTAMP, PLACEHOLDER (required `${mode}`), CONFLICTING_VOICE_MARKERS, plus 2 more (linter helpers)
+    - Constitution: CONSTITUTION_EXISTS, CONSTITUTION_RFC2119 (MUST / SHOULD / MAY), CONSTITUTION_CWE_MAPPING (MUST-level must have CWE), CONSTITUTION_COUNT (0 → error, only-MAY → warning), CONSTITUTION_NO_DUPLICATE_IDS
+
+**Review state machine (6 states):** idle → started → in-review → finalized → validated; plus `abandoned` (terminal). Transitions enforced server-side; receipt is content-bound SHA-256 over 5 MD artifacts (no crypto signing).
+
+**Persona-aware lens framework (5 slots):** risk / correctness / security / readability / spec-compliance. 4 binding personas trigger lens requirements (security → [security, risk]; reviewer → [readability, spec-compliance]; architect → [spec-compliance, risk]; debugger → [correctness]).
+
+**SDD templates (5):** proposal / design / tasks / requirements / constitution — byte-stable renderers in lib/sdd-templates.ts; each carries `<!-- caduceus:<id>-template-version 0.5.0 -->` marker.
+
+**Lens registry version:** LENS_REGISTRY_VERSION = 1; receipts carry this number so version drift is detectable (design.md §12 R2).
 
 **Backward compat:** v0.2.0 → v0.3.0 name migration (`gentleman` → `default`, `neutral` → `plain`) with `console.warn`
 
@@ -120,11 +137,23 @@ of another package's persona. Every persona must pass `/caduceus:lint`
 (structural, byte-stability, conflicting-voice, unknown-macro checks).
 The persona is "correct" only if the contract is satisfied.
 
-### DNA-3: Light by default (v0.3.0 sharpening)
+### DNA-3: Light at the core, evolve into persona-aware harness (v0.5.0 revision)
 
-v0.1.0: 0 deps, postinstall, native binaries. v0.3.0 sharpening:
-also 0 carry-over of other products' content. v0.4.0: 53 kB tarball,
-186 tests, 0 source dependencies on gentle-pi or any other product.
+**DNA-3-revised**: Light at the core, evolve into persona-aware
+harness, compose internally only.
+
+- **Persona engine** remains 0-deps / 0-native / 0-postinstall.
+- **Lifecycle harness layer** (SDD commands, review state machine,
+  advisory lint, constitutional constraints) is added incrementally
+  across v0.5.0 → v0.8.0. Each phase ships pure-TS implementations;
+  no native binaries, no crypto dependencies (content-bound JSON
+  receipts use SHA-256 via node:crypto).
+- **caduceus does NOT bridge to external pi packages** — composition
+  is internal (persona + SDD + review) only. Mechanical enforcement
+  in `scripts/verify-package.mjs` (Checks 15/16/17).
+
+v0.5.0: ~60 KB tarball, 309 tests, 0 source dependencies on
+gentle-pi / pi-review / pi-agents / dracond / pi-muselinn-harness.
 
 ## 4. The v0.3.0 brand-independence decision
 
@@ -211,15 +240,15 @@ does not depend on caduceus.
 
 | Your need | Use | Why |
 |---|---|---|
-| Strict TDD process + review gate + SDD | gentle-pi | full toolchain |
-| Persona injection, no extra ceremony | caduceus | focused, light |
+| Full SDD cycle + review gate + subagents + goal loop | caduceus | complete lifecycle in one package |
+| Persona injection, no extra ceremony | caduceus | focused, light persona layer |
 | Multiple work contexts (work / learning) | caduceus | profiles are caduceus-only |
 | Personas that auto-reference user / project / cwd | caduceus | macros are caduceus-only |
-| PR / commit / issue workflow | gentle-pi | skills are complete |
 | Persona-free model (no voseo, no Rioplatense) | caduceus | language-neutral |
 | Concerned about native binaries / postinstall | caduceus | 0 native, 0 postinstall |
-| Already use gentle-pi, want more persona variety | both | no conflict |
-| Need verifiable persona contract | caduceus | lint + verify |
+| Persona-aware review gate (Constitutional constraints) | caduceus | MUST/SHOULD/MAY + CWE |
+| Crypto-signed receipts | gentle-pi | Minisign; not in caduceus Phase A |
+| Migrating from gentle-pi | caduceus | drop-in for the persona layer; review/sdd equivalents available |
 
 ## 6. Architecture
 
@@ -253,41 +282,39 @@ caduceus/
 └── package.json
 ```
 
-## 7. Roadmap (v0.5.0+)
+## 7. Roadmap (v0.6.0 → v0.8.0)
 
-Prioritized for the next minor release. Not a commitment; subject
-to validation against actual user needs.
+### v0.6.0 (Phase B — full lens collection)
 
-### P0 (next minor: v0.5.0 candidates)
+- Implement the 5 lens slots with real `run` functions:
+  - `risk` — surface high-impact changes
+  - `correctness` — invariant + regression scan
+  - `security` — CWE/MITRE-aware security review
+  - `readability` — naming, structure, comment coverage
+  - `spec-compliance` — task ↔ spec alignment check
+- Promote `resetReview` from no-op stub to full archive + clear
+  logic (currently a stub wired in extensions/caduceus.ts).
 
-- **Per-model variants**: support different persona files per LLM
-  (e.g., `prompts/gentleman.claude.md` for Claude, `.gpt.md` for
-  GPT). Requires empirical research on whether the same persona
-  benefits from model-specific phrasing. Path: `lib/prompts/`
-  lookup with provider/model-aware resolution.
-- **LLM-generated persona** (`/caduceus:generate`): if/when we
-  decide to add an LLM call, the cleanest path is a separate
-  optional package (`caduceus-gen`) so the 0-runtime-deps invariant
-  is preserved for users who don't need it.
+### v0.7.0 (Phase C — subagent orchestration)
 
-### P1 (deferred)
+- Persona-aware subagent routing: dispatch to sub-agents that
+  inherit the active persona's voice and lens requirements.
+- Parallel/sequential/reduce workflow primitives (mirroring
+  pi-agents concepts, not depending on them).
 
-- **Persona effectiveness measurement**: track whether the model
-  actually follows the persona. Needs >100 downloads/month to be
-  meaningful (we have ~6 as of 2026-08).
-- **Community gallery** (`npx caduceus add <name>`): a curated
-  registry of community-contributed personas. Premature at current
-  adoption.
-- **More built-in personas**: 10 covers common cases; further
-  personas added based on actual user requests.
+### v0.8.0 (Phase D — goal loop + budget)
 
-### P2 (probably never)
+- Goal loop with triple budget (token + turn + wallClock),
+  FIFO + priority queue.
+- Persistent session state across goal executions.
 
-- Per-model LLM-tweaked personas (too speculative without data)
-- Dynamic persona adjustment based on task type
-- Web playground for persona preview
-- Multiple-language "active translation" modes (the v0.2.0 voseo
-  approach is intentionally retired)
+### Deferred (was v0.5.0 P0 in v0.4.0 roadmap)
+
+- Per-model variants: deferred; no user demand yet.
+- LLM-generated persona (`/caduceus:generate`): deferred; the
+  v0.5.0 lifecycle harness doesn't require it.
+- Community gallery: premature at current adoption (~6 downloads/month).
+- Persona effectiveness measurement: needs >100 downloads/month.
 
 ## 8. Decision records
 
@@ -307,7 +334,11 @@ decisions are appended to this list.
 | 2026-08 (v0.3.1) | `/caduceus:mode` and `/caduceus:persona` accept old names with deprecation warning | Backward compat for v0.2.0 users; auto-migration in `readConfig` for the config. |
 | 2026-08 (v0.4.0) | Profile system added | The "I want different caduceus for different work contexts" use case is real. Files in `~/.pi/agent/caduceus/profiles/`. |
 | 2026-08 (v0.4.0) | Persona macros (`${userName}` etc.) added | Personas need to reference runtime context (user, project, cwd) without being re-rendered for each session. |
-
+| 2026-08 (v0.5.0) | caduceus evolves from persona contract to persona-aware lifecycle harness | Self-use demand + industry SD consensus + pi ecosystem maturity |
+ | 2026-08 (v0.5.0) | Reference-but-not-bridge policy for external pi packages | Brand independence (extends v0.3.0 decision) |
+ | 2026-08 (v0.5.0) | Constitution pattern adopted for change-level constraints | Marri 2026 Constitutional SDD pattern, lighter than state machine enforcement |
+ | 2026-08 (v0.5.0) | Slash command grouping: flat for existing, grouped for new | Backward compat + progressive enhancement |
+ 
 ## 9. What this document is NOT
 
 - **Not a marketing page.** That's the README.

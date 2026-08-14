@@ -56,7 +56,7 @@ language clause, naming). The grep check is the guard.
   `peerDependencies` per `pi.dev/docs/latest/packages`)
 - **Brand:** sea blue `#1B4D7A` — deliberately distinct from gentle-pi rose
 
-## Non-negotiable invariants (v0.4.0)
+## Non-negotiable invariants (v0.5.0)
 
 These are the falsifiable statements the test suite must defend. Any change
 to one of these requires an explicit proposal amendment.
@@ -73,6 +73,15 @@ to one of these requires an explicit proposal amendment.
    names with a `console.warn` (backward compat).
 7. `npm view pi-caduceus` resolves to the same package before and after
    any apply phase (no accidentally bumped scope).
+
+8. **v0.5.0 (added)**: The 5 constitution lint checks pass on the
+   canonical constitution template shipped with v0.5.0.
+9. **v0.5.0 (added)**: No source file imports from
+   `pi-review`, `pi-agents`, `dracond`, or `pi-muselinn-harness`.
+   Mechanical check via `scripts/verify-package.mjs` (Checks 15/16/17).
+10. **v0.5.0 (added)**: The 21 slash commands (10 core + 5 SDD + 6 review)
+    are registered when `registerAllSlashCommands` is called (verified by
+    `tests/extension-entry.test.ts`).
 
 ## Strict TDD posture
 
