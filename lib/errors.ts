@@ -59,6 +59,22 @@ export class CaduceusTemplateError extends CaduceusError {
   }
 }
 
+export class CaduceusReviewError extends CaduceusError {
+  readonly code:
+    | "already-started"
+    | "invalid-transition"
+    | "not-in-review"
+    | "not-finalized"
+    | "missing-artifact"
+    | "no-receipt";
+
+  constructor(code: CaduceusReviewError["code"], message?: string) {
+    super(message ?? `Review error: ${code}`, "CADUCEUS_REVIEW_ERROR");
+    this.name = "CaduceusReviewError";
+    this.code = code;
+  }
+}
+
 
 export class CaduceusProfileNotFoundError extends CaduceusError {
   readonly name: string;

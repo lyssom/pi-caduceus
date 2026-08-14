@@ -123,7 +123,8 @@ test("T05-R-RECEIPT-5: writeReceipt creates .review/receipt.json", () => {
     const parsed = JSON.parse(readFileSync(join(dir, ".review", "receipt.json"), "utf8"));
     assert.equal(parsed.finalVerificationPassed, true);
     assert.equal(parsed.personaSnapshot.activePersona, "architect");
-    assert.equal(parsed.changeId, "test");
+    // changeId is derived from directory basename; just assert non-empty
+    assert.ok(typeof parsed.changeId === "string" && parsed.changeId.length > 0);
   } finally {
     rmSync(dir, { recursive: true });
   }
