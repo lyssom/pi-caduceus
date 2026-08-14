@@ -2,49 +2,77 @@
 
 > This file is the project-level companion to the SDD change artifacts under
 > `openspec/changes/{change}/`. Read it before doing any work in this repo.
+>
+> **For the canonical current state of the project** (what caduceus is, what
+> it does, what it doesn't, and why), see **[`STATUS.md`](../STATUS.md)** at
+> the repo root. This `AGENTS.md` covers the project conventions
+> (invariants, TDD posture, test runner, layout). The v0.1.0 seed design
+> in [`INIT.md`](../INIT.md) was substantially revised by the v0.3.0 brand-
+> independence decision; for the current design rationale, read STATUS.md.
 
 ## What this project is
 
-**caduceus** is a Persona Contract package for the [pi](https://pi.dev) coding
-agent. It does one thing and one thing only: **injects a deterministic,
+**caduceus is a Persona Contract package for the [pi](https://pi.dev) coding
+agent.** It does one thing and one thing only: **injects a deterministic,
 testable, line-citable persona prompt segment before the first token of a pi
 session, given `(mode, locale)`**.
 
-- Two persona modes in v0.1.0: `gentleman` (senior architect, Rioplatense
-  Spanish voseo) and `neutral` (professional Spanish, voseo forbidden).
+- Ten built-in caduceus-original personas (since v0.3.0): `default`, `plain`,
+  `concise`, `reviewer`, `teacher`, `security`, `debugger`, `socratic`,
+  `architect`, `pirate`. See [STATUS.md §2.1](../STATUS.md).
+- Three persona modes: `default`, `plain`, `auto`. (The legacy names
+  `gentleman` and `neutral` are still accepted as deprecated input but
+  internally mapped to `default` and `plain`.)
 - Zero runtime dependencies. Zero native binaries. Zero postinstall.
 - Composition model: a shell (persona contract) and meat (project skills,
   AGENTS.md, custom prompts) — see `INIT.md §4` DNA-1.
 
+## Brand independence (v0.3.0+)
+
+caduceus is **not a fork of gentle-pi**. It benchmarks against gentle-pi
+but does not depend on it. Since v0.3.0:
+
+- The 2 v0.1.0/v0.1.1 personas that were byte-for-byte copies of
+  gentle-pi (`gentleman.md`, `neutral.md`) have been **deleted**. They
+  are replaced by 10 caduceus-original personas.
+- The "el Gentleman" / "voseo" / "Rioplatense" content is **gone** from all
+  source files except `lib/locale-detect.ts` (which legitimately uses
+  voseo as a Spanish-detection signal).
+- `lib/language-clause.ts` is **deleted** (no more language-clause
+  appended to persona prompts).
+- `verify-package.mjs` greps for `"el Gentleman"` and `"Rioplatense"` in
+  the source and fails the build if any are found. This is the
+  mechanical enforcement.
+
+**Do not re-introduce any gentle-pi-derived content** (persona text,
+language clause, naming). The grep check is the guard.
+
 ## Stack
 
 - **Language:** TypeScript (ESM, `module: "type"`)
-- **Runtime:** Node 20+ with `--experimental-strip-types` (mirrors
-  gentle-pi)
-- **Package manager:** pnpm 11.1.1 (gentle-pi family convention)
+- **Runtime:** Node 20+ with `--experimental-strip-types`
 - **Test runner:** `node --experimental-strip-types --test tests/*.test.ts`
 - **Peer:** `@earendil-works/pi-coding-agent` (declared in
   `peerDependencies` per `pi.dev/docs/latest/packages`)
 - **Brand:** sea blue `#1B4D7A` — deliberately distinct from gentle-pi rose
 
-## Non-negotiable invariants
+## Non-negotiable invariants (v0.4.0)
 
-These are the falsifiable statements the test suite must defend. Any change to
-one of these requires an explicit proposal amendment.
+These are the falsifiable statements the test suite must defend. Any change
+to one of these requires an explicit proposal amendment.
 
-1. `gentleman` mode prompt contains the literal clause
-   `natural Rioplatense Spanish with voseo` (case-insensitive).
-2. `neutral` mode prompt contains the literal clause `Do NOT use voseo`
-   (case-insensitive).
-3. Cross-mode leakage is forbidden: `gentleman` prompt must not contain
-   `Do NOT use voseo`; `neutral` prompt must not contain
-   `natural Rioplatense Spanish with voseo`.
-4. `caduceus inspect` output is byte-stable given the same inputs (no
-   timestamps, no random IDs in the prompt segment).
+1. The 10 built-in personas pass `lintPersonaContent` (all 8 lint checks).
+2. `${mode}` placeholder is present in every persona file.
+3. No persona content contains "el Gentleman" / "Rioplatense" / "voseo"-
+   specific phrases (mechanical check via `verify-package.mjs`).
+4. `caduceus inspect` and `caduceus diff` outputs are byte-stable given
+   the same inputs (no timestamps, no random IDs).
 5. The `pi` manifest in `package.json` declares `extensions`, `themes`, and
    `prompts` paths; `keywords` includes `"pi-package"`.
-6. `npm view pi-caduceus` resolves to the same package before and
-   after the apply phase (no accidentally bumped scope).
+6. v0.2.0 mode/persona names in user config are auto-migrated to v0.3.0+
+   names with a `console.warn` (backward compat).
+7. `npm view pi-caduceus` resolves to the same package before and after
+   any apply phase (no accidentally bumped scope).
 
 ## Strict TDD posture
 
@@ -60,59 +88,52 @@ TRIANGULATE  → add a second test that forces a more general implementation
 REFACTOR     → clean up, keep all tests green
 ```
 
-The first test committed in `tests/` MUST be a failing
-`persona-contract.test.ts` (RED), per `INIT.md §9.4`.
-
-## Workspace layout (target for v0.1.0)
+## Workspace layout (current: v0.4.0)
 
 ```text
 caduceus/
 ├── package.json              # pi manifest, 0 runtime deps
-├── README.md                 # positioning + install + screenshot
+├── README.md                 # positioning + install + Quick Start
+├── STATUS.md                 # canonical current-state reference
+├── CHANGELOG.md              # version history
+├── INIT.md                   # v0.1.0 seed design (superseded; see STATUS.md)
 ├── LICENSE                   # MIT
 ├── extensions/
 │   └── caduceus.ts           # entry: registers hook + slash commands
-├── lib/
+├── lib/                       # 13 modules (pure, testable)
 │   ├── persona-contract.ts   # core: pure function (mode, locale) → prompt
-│   ├── language-clause.ts    # language clause selection
-│   ├── locale-detect.ts      # detect from input / env / config
-│   ├── config-store.ts       # read/write ~/.pi/agent/caduceus.json + .caduceusrc
-│   ├── slash-commands.ts     # /caduceus:* command registry
-│   ├── status-bar.ts         # TUI footer (uses pi-tui peer)
-│   └── version.ts            # exported const CADUCEUS_VERSION
-├── prompts/
-│   ├── gentleman.md          # full persona segment (gentleman mode)
-│   └── neutral.md            # full persona segment (neutral mode)
+│   ├── persona-loader.ts     # filesystem discovery
+│   ├── locale-detect.ts      # text → locale
+│   ├── lint.ts               # static persona checks (8 checks)
+│   ├── prompt-mode.ts        # append/replace composition
+│   ├── slash-commands.ts     # 9 slash commands
+│   ├── wizard.ts             # template-based persona generation
+│   ├── diff.ts               # hand-rolled Myers diff
+│   ├── macros.ts             # ${userName} etc. runtime substitution
+│   ├── profile-store.ts      # save/load/list/delete profiles
+│   ├── config-store.ts       # read/write config + migrations
+│   ├── errors.ts             # CaduceusError + subclasses
+│   └── version.ts            # CADUCEUS_VERSION
+├── prompts/                   # 10 caduceus-original persona files
 ├── themes/
 │   └── caduceus.json         # sea-blue starter theme
-├── tests/
-│   ├── persona-contract.test.ts
-│   ├── language-clause.test.ts
-│   ├── locale-detect.test.ts
-│   ├── config-store.test.ts
-│   └── slash-commands.test.ts
+├── tests/                     # 13 test files, 186 tests
 └── scripts/
-    └── verify-package.mjs    # pre-publish file integrity check
+    └── verify-package.mjs    # 14 pre-publish checks (incl. brand grep)
 ```
 
-## Reference: gentle-pi baseline
+## Reference: gentle-pi baseline (for context, not for content reuse)
 
-The sibling package at `/root/.pi/agent/npm/node_modules/gentle-pi`
-(v2.1.2) is the closest reference implementation. Study its:
-
-- `extensions/gentle-ai.ts` for the persona contract pattern
-  (specifically the `gentleman` and `neutral` clauses at lines 262 / 272).
-- `tests/persona-single-channel.test.ts`,
-  `tests/persona-neutral-voseo.test.ts`,
-  `tests/artifact-language.test.ts` for the test posture.
-- `package.json` `pi` manifest shape and the `keywords: ["pi-package", ...]`
-  requirement.
-
-**Caduceus must NOT duplicate gentle-pi's heavy machinery** (no SDD engine
-inside the package, no review tooling, no subagent chains, no delivery
-skills). Caduceus is a focused, smaller sibling.
+gentle-pi v2.1.2 at `/root/.pi/agent/npm/node_modules/gentle-pi` is a
+useful reference for **architecture patterns** (the persona extension
+file structure, slash command registration style, the pi manifest
+shape, the strict TDD posture). It is **not** a source of content for
+caduceus (see "Brand independence" above). For a feature-by-feature
+comparison, see [STATUS.md §5](../STATUS.md).
 
 ## Locked decisions
 
-See `INIT.md §1`. Any amendment to a locked decision must be recorded in a
-new `## Amendment` section, not by in-place edit.
+See `INIT.md §1` for the v0.1.0 locked decisions. For the v0.3.0+ brand-
+independence decision and the v0.4.0 profile/macro additions, see
+[STATUS.md §8](../STATUS.md). Any amendment to a locked decision must be
+recorded in a new `## Amendment` section, not by in-place edit.

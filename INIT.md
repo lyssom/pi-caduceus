@@ -1,5 +1,19 @@
 # Caduceus — Project Initialization File
 
+> **⚠️ SUPERSEDED — kept for historical reference only.**
+> This file is the v0.1.0 design seed. As of v0.3.0, caduceus is no longer
+> a "lighter subset of gentle-pi" — it is an independent product. The
+> original design DNA (shell vs meat, persona as a contract, light by
+> default) is preserved, but the specific gentleman/neutral personas,
+> voseo/Rioplatense content, and gentle-pi byte-mirror tests are gone.
+> **For the current state of the project, see [`STATUS.md`](./STATUS.md).**
+> For conventions (TDD posture, workspace layout, invariants), see
+> [`openspec/AGENTS.md`](./openspec/AGENTS.md). For version history, see
+> [`CHANGELOG.md`](./CHANGELOG.md).
+>
+> The sections below (§1-§11) describe the **v0.1.0 design intent**; the
+> actual implementation has diverged. Treat this as historical context.
+
 > **Status:** Seed file. Persistent decision record for the new `caduceus` Pi package.
 > **Date created:** 2026-01
 > **Owner:** TBD
@@ -9,14 +23,18 @@
 
 ---
 
-## 1. Locked Decisions
+## 1. Locked Decisions (v0.1.0 — historical)
 
-| # | Decision | Value |
+These were the locked decisions at v0.1.0. As of v0.3.0, many have been
+amended or superseded. For the current locked decisions, see
+[`STATUS.md §8` Decision Records](./STATUS.md#8-decision-records).
+
+| # | Decision (v0.1.0) | Current state |
 |---|---|---|
-| 1 | **Package name** | `caduceus` |
-| 2 | **MVP scope** | **Option A — Persona Contract package** (pure prompt-orchestration, no native binary, no skills in v0.1.0) |
-| 3 | **Repo identity** | **Independent** (separate repo from `gentle-pi`, separate npm package, own org/owner TBD) |
-| 4 | **Initial version** | `0.1.0` (semver: pre-stable, signals "small surface, expect iteration") |
+| 1 | **Package name** `caduceus` | **Still in force.** Confirmed in v0.1.1+ releases. |
+| 2 | **MVP scope** = "Persona Contract package" (pure prompt-orchestration, no native binary, no skills in v0.1.0) | **Still in force** as a high-level principle, but the persona no longer mirrors gentle-pi (see STATUS.md §4). |
+| 3 | **Repo identity** = "Independent" (separate repo from `gentle-pi`, separate npm package, own org/owner TBD) | **Realized and reinforced** in v0.3.0: caduceus removed all "el Gentleman" / "voseo" / "Rioplatense" content. |
+| 4 | **Initial version** `0.1.0` | **Superseded** by current shipped v0.4.0. |
 
 ---
 
