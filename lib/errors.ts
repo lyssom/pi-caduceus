@@ -75,6 +75,20 @@ export class CaduceusReviewError extends CaduceusError {
   }
 }
 
+export class CaduceusSDDError extends CaduceusError {
+  readonly code:
+    | "change-exists"
+    | "invalid-name"
+    | "requirements-missing"
+    | "not-finalized";
+
+  constructor(code: CaduceusSDDError["code"], message?: string) {
+    super(message ?? `SDD error: ${code}`, "CADUCEUS_SDD_ERROR");
+    this.name = "CaduceusSDDError";
+    this.code = code;
+  }
+}
+
 
 export class CaduceusProfileNotFoundError extends CaduceusError {
   readonly name: string;
