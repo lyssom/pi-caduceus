@@ -102,6 +102,22 @@ function isBindingLevel(level: string): boolean {
   );
 }
 
+/**
+ * Construct a LintViolation. The `location` parameter carries the
+ * offending principle's ID (e.g., "CON-001") so downstream
+ * consumers can show context without re-parsing the markdown.
+ */
+function violation(
+  checkId: ConstitutionLintId,
+  severity: "error" | "warning",
+  message: string,
+  location?: string,
+): LintViolation {
+  return location !== undefined
+    ? { checkId, severity, message, location }
+    : { checkId, severity, message };
+}
+
 // ---------------------------------------------------------------------------
 // Internal: individual checks
 // ---------------------------------------------------------------------------
@@ -111,11 +127,11 @@ const CONSTITUTION_EXISTS_CHECK: ConstitutionLintCheck = {
   run: (markdown) => {
     if (!markdown.trim()) {
       return [
-        {
-          checkId: "CONSTITUTION_EXISTS",
-          severity: "error",
-          message: "Constitution file is empty or missing.",
-        },
+        violation(
+          "CONSTITUTION_EXISTS",
+          "error",
+          "Constitution file is empty or missing.",
+        ),
       ];
     }
     return [];
@@ -127,16 +143,18 @@ const CONSTITUTION_RFC2119_CHECK: ConstitutionLintCheck = {
   run: (markdown) => {
     const principles = parsePrinciples(markdown);
     const violations: LintViolation[] = [];
+    const keywordList = Array.from(RFC_2119_KEYWORDS).join(", ");
     for (const p of principles) {
       if (!RFC_2119_KEYWORDS.has(p.level)) {
-        violations.push({
-          checkId: "CONSTITUTION_RFC2119",
-          severity: "error",
-          message:
+        violations.push(
+          violation(
+            "CONSTITUTION_RFC2119",
+            "error",
             `Principle ${p.id} has invalid Level '${p.level || "(empty)"}'. ` +
-            `Must be one of RFC 2119 keywords: ${Array.from(RFC_2119_KEYWORDS).join(", ")}.`,
-          location: p.id,
-        });
+              `Must be one of RFC 2119 keywords: ${keywordList}.`,
+            p.id,
+          ),
+        );
       }
     }
     return violations;
@@ -159,15 +177,16 @@ const CONSTITUTION_CWE_MAPPING_CHECK: ConstitutionLintCheck = {
       const isInvalidNonMay =
         !RFC_2119_KEYWORDS.has(p.level) && p.level !== "";
       if ((isMust || isInvalidNonMay) && !p.hasCwe) {
-        violations.push({
-          checkId: "CONSTITUTION_CWE_MAPPING",
-          severity: "warning",
-          message:
+        violations.push(
+          violation(
+            "CONSTITUTION_CWE_MAPPING",
+            "warning",
             `Principle ${p.id} (Level: '${p.level || "(empty)"}') ` +
-            `lacks a CWE field. SHOULD provide a CWE-NNN reference ` +
-            `(or 'CWE: N/A' explicitly).`,
-          location: p.id,
-        });
+              `lacks a CWE field. SHOULD provide a CWE-NNN reference ` +
+              `(or 'CWE: N/A' explicitly).`,
+            p.id,
+          ),
+        );
       }
     }
     return violations;
@@ -180,12 +199,11 @@ const CONSTITUTION_COUNT_CHECK: ConstitutionLintCheck = {
     const principles = parsePrinciples(markdown);
     if (principles.length === 0) {
       return [
-        {
-          checkId: "CONSTITUTION_COUNT",
-          severity: "error",
-          message:
-            "Constitution contains 0 principles. Must have at least one principle.",
-        },
+        violation(
+          "CONSTITUTION_COUNT",
+          "error",
+          "Constitution contains 0 principles. Must have at least one principle.",
+        ),
       ];
     }
     // Fire "MAY-only" warning only if EVERY principle has an explicit MAY
@@ -197,13 +215,12 @@ const CONSTITUTION_COUNT_CHECK: ConstitutionLintCheck = {
     );
     if (allExplicitlyMay) {
       return [
-        {
-          checkId: "CONSTITUTION_COUNT",
-          severity: "warning",
-          message:
-            "Constitution contains only MAY-level principles. " +
+        violation(
+          "CONSTITUTION_COUNT",
+          "warning",
+          "Constitution contains only MAY-level principles. " +
             "Constitution is non-binding; consider adding SHOULD or MUST.",
-        },
+        ),
       ];
     }
     return [];
@@ -221,12 +238,14 @@ const CONSTITUTION_NO_DUPLICATE_IDS_CHECK: ConstitutionLintCheck = {
     const violations: LintViolation[] = [];
     for (const [id, count] of counts.entries()) {
       if (count > 1) {
-        violations.push({
-          checkId: "CONSTITUTION_NO_DUPLICATE_IDS",
-          severity: "error",
-          message: `Principle ID ${id} appears ${count} times. IDs must be unique.`,
-          location: id,
-        });
+        violations.push(
+          violation(
+            "CONSTITUTION_NO_DUPLICATE_IDS",
+            "error",
+            `Principle ID ${id} appears ${count} times. IDs must be unique.`,
+            id,
+          ),
+        );
       }
     }
     return violations;
