@@ -12,7 +12,7 @@
 //   1 — one or more checks failed
 // ---------------------------------------------------------------------------
 
-import { existsSync, readFileSync, statSync } from "node:fs";
+import { existsSync, readFileSync, statSync, readdirSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -251,6 +251,107 @@ check("no native binaries in expected file paths", () => {
     return;
   }
   pass("no native binaries in expected paths");
+});
+
+// ---------------------------------------------------------------------------
+// v0.5.0: forbid external pi-package dependencies
+// ---------------------------------------------------------------------------
+
+const FORBIDDEN_PI_PACKAGES = [
+  "pi-review",
+  "pi-agents",
+  "dracond",
+  "pi-muselinn-harness",
+];
+
+check("v0.5.0: no import of external pi packages in source", () => {
+  const sourceDirs = ["lib", "extensions"];
+  const importRegex = /from\s+['"]([^'"]+)['"]/g;
+  const found = [];
+  for (const dir of sourceDirs) {
+    const fullDir = join(root, dir);
+    if (!existsSync(fullDir)) continue;
+    const files = readdirSync(fullDir).filter((f) => f.endsWith(".ts"));
+    for (const f of files) {
+      const content = readFileSync(join(fullDir, f), "utf8");
+      let m;
+      while ((m = importRegex.exec(content)) !== null) {
+        const spec = m[1];
+        for (const pkg of FORBIDDEN_PI_PACKAGES) {
+          if (spec === pkg || spec.startsWith(pkg + "/")) {
+            found.push({ file: f, spec });
+          }
+        }
+      }
+    }
+  }
+  if (found.length > 0) {
+    fail(
+      "no import of external pi packages",
+      `found: ${found.map((f) => `${f.file} → ${f.spec}`).join(", ")}`,
+    );
+    return;
+  }
+  pass("no import of external pi packages in source");
+});
+
+check("v0.5.0: no dependency on external pi packages in package.json", () => {
+  const pkgPath = join(root, "package.json");
+  if (!existsSync(pkgPath)) {
+    fail("no dependency on external pi packages", "package.json missing");
+    return;
+  }
+  const pkg = JSON.parse(readFileSync(pkgPath, "utf8"));
+  const allDeps = {
+    ...(pkg.dependencies ?? {}),
+    ...(pkg.peerDependencies ?? {}),
+    ...(pkg.optionalDependencies ?? {}),
+    ...(pkg.devDependencies ?? {}),
+  };
+  const found = [];
+  for (const forbidden of FORBIDDEN_PI_PACKAGES) {
+    if (forbidden in allDeps) {
+      found.push({ name: forbidden, where: "dep" });
+    }
+  }
+  // @earendil-works/pi-coding-agent is the only allowed pi peer
+  if (found.length > 0) {
+    fail(
+      "no dependency on external pi packages",
+      `found: ${found.map((f) => f.name).join(", ")}`,
+    );
+    return;
+  }
+  pass("no dependency on external pi packages in package.json");
+});
+
+check("v0.5.0: no content fingerprint overlap with forbidden pi packages", () => {
+  // Lightweight check: scan prompts/*.md for forbidden package names.
+  // (Full content fingerprinting would require diffing against upstream
+  // packages; out of scope for Phase A. Phase B may extend.)
+  const promptsDir = join(root, "prompts");
+  if (!existsSync(promptsDir)) {
+    pass("no content fingerprint overlap (no prompts dir)");
+    return;
+  }
+  const files = readdirSync(promptsDir).filter((f) => f.endsWith(".md"));
+  const found = [];
+  for (const f of files) {
+    const content = readFileSync(join(promptsDir, f), "utf8");
+    for (const forbidden of FORBIDDEN_PI_PACKAGES) {
+      if (content.includes(forbidden)) {
+        found.push({ file: f, pkg: forbidden });
+      }
+    }
+  }
+  if (found.length > 0) {
+    fail(
+      "no content fingerprint overlap",
+      `found: ${found.map((f) => `${f.file} mentions ${f.pkg}`).join(", ")}`,
+    );
+    return;
+  }
+  pass("no content fingerprint overlap with forbidden pi packages");
 });
 
 // ---------------------------------------------------------------------------
