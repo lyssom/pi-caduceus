@@ -25,7 +25,7 @@ import {
 import { join, basename } from "node:path";
 
 import { CaduceusReviewError } from "./errors.ts";
-import type { PersonaSnapshot, LensRunSummary } from "./persona-lens-router.ts";
+import type { PersonaSnapshot, LensRunSummary } from "./review-types.ts";
 
 // ---------------------------------------------------------------------------
 // Public types

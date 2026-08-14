@@ -11,31 +11,17 @@
 // ---------------------------------------------------------------------------
 
 import type { LensId, LensRegistry } from "./review-lens-framework.ts";
+import type { PersonaSnapshot, LensRunSummary } from "./review-types.ts";
 
 // ---------------------------------------------------------------------------
 // Public types
 // ---------------------------------------------------------------------------
 
-/**
- * Snapshot of the persona + mode + locale at the moment a review
- * starts. Used to decide which lenses are required and to record
- * the routing decision in the receipt (so the receipt is invalid
- * if the persona changes — see design.md §5.3).
- */
-export type PersonaSnapshot = {
-  activePersona: string;
-  mode: "default" | "plain" | "auto";
-  locale: string;
-};
+// PersonaSnapshot and LensRunSummary are defined in ./review-types.ts
+// and re-exported here for backward compatibility with callers that
+// imported them from this module.
 
-export type LensRunSummary = {
-  lensId: LensId;
-  status: "queued" | "running" | "skipped" | "completed";
-  personaRequired: boolean;
-  findingsCount: number;
-  startedAt: string | null;
-  completedAt: string | null;
-};
+export type { PersonaSnapshot, LensRunSummary };
 
 export type LensSelectionRule = {
   persona: string;
