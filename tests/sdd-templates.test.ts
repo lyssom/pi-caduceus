@@ -194,3 +194,93 @@ test("T02-R-TPL-12: tasks template uses checkbox markdown", () => {
   const out = renderTemplate("tasks", CTX);
   assert.match(out, /^- \[ \]/m, "tasks must have unchecked checkbox items");
 });
+
+// ---------------------------------------------------------------------------
+// Test 13 (TRIANGULATE): date field substitutes correctly
+// ---------------------------------------------------------------------------
+
+test("T02-R-TPL-13: renderTemplate substitutes the date field", () => {
+  const ctx: SddTemplateContext = {
+    ...CTX,
+    date: "2099-12-31",
+  };
+  const out = renderTemplate("proposal", ctx);
+  assert.ok(out.includes("2099-12-31"), "date did not substitute");
+});
+
+// ---------------------------------------------------------------------------
+// Test 14 (TRIANGULATE): all 5 templates end with a single trailing newline
+// ---------------------------------------------------------------------------
+
+test("T02-R-TPL-14: all templates end with a single trailing newline", () => {
+  for (const id of TEMPLATE_IDS) {
+    const out = renderTemplate(id, CTX);
+    assert.ok(
+      out.endsWith("\n"),
+      `${id} does not end with newline (ends with ${JSON.stringify(out.slice(-5))})`,
+    );
+    assert.ok(
+      !out.endsWith("\n\n"),
+      `${id} ends with double newline (byte-stability violation)`,
+    );
+  }
+});
+
+// ---------------------------------------------------------------------------
+// Test 15 (TRIANGULATE): each template renders distinct content
+// ---------------------------------------------------------------------------
+
+test("T02-R-TPL-15: each template renders distinct (non-overlapping) content", () => {
+  const outputs = new Map<string, string>();
+  for (const id of TEMPLATE_IDS) {
+    outputs.set(id, renderTemplate(id, CTX));
+  }
+  // Pairwise check: each template's output must not be identical to another.
+  const ids = Array.from(TEMPLATE_IDS);
+  for (let i = 0; i < ids.length; i++) {
+    for (let j = i + 1; j < ids.length; j++) {
+      const a = outputs.get(ids[i])!;
+      const b = outputs.get(ids[j])!;
+      assert.notEqual(a, b, `${ids[i]} and ${ids[j]} produced identical output`);
+    }
+  }
+});
+
+// ---------------------------------------------------------------------------
+// Test 16 (TRIANGULATE): TEMPLATE_IDS is iterable
+// ---------------------------------------------------------------------------
+
+test("T02-R-TPL-16: TEMPLATE_IDS is iterable (Set semantics)", () => {
+  const arr = Array.from(TEMPLATE_IDS);
+  assert.equal(arr.length, 5);
+  // Set deduplicates
+  const set = new Set(arr);
+  assert.equal(set.size, 5);
+});
+
+// ---------------------------------------------------------------------------
+// Test 17 (TRIANGULATE): CaduceusTemplateError carries templateId field
+// ---------------------------------------------------------------------------
+
+test("T02-R-TPL-17: CaduceusTemplateError carries the offending templateId", () => {
+  try {
+    renderTemplate("nonexistent" as never, CTX);
+    assert.fail("expected throw");
+  } catch (err) {
+    assert.ok(err instanceof CaduceusTemplateError);
+    assert.equal((err as CaduceusTemplateError).templateId, "nonexistent");
+    assert.equal((err as CaduceusTemplateError).code, "CADUCEUS_TEMPLATE_ERROR");
+  }
+});
+
+// ---------------------------------------------------------------------------
+// Test 18 (TRIANGULATE): tasks template has numbered task IDs
+// ---------------------------------------------------------------------------
+
+test("T02-R-TPL-18: tasks template has sequentially numbered task headings", () => {
+  const out = renderTemplate("tasks", CTX);
+  assert.match(out, /^## Task 1:/m);
+  assert.match(out, /^## Task 2:/m);
+  assert.match(out, /^## Task 3:/m);
+});
+
