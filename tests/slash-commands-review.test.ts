@@ -169,7 +169,7 @@ test("T10-R-REVIEWSLASH-2: /caduceus:review:inspect delegates to inspectReview",
   const { ctx } = makeMockCtx();
   const deps = makeMockDeps();
   registerReviewSlashCommands(pi, deps);
-  await pi.commands["caduceus:review:inspect"].handler("", ctx);
+  await pi.commands["caduceus:review:inspect"].handler("my-change", ctx);
   assert.equal(deps.calls[0].fn, "inspectReview");
 });
 
