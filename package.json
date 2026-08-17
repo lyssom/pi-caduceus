@@ -1,7 +1,7 @@
 {
   "name": "pi-caduceus",
-  "version": "0.6.1",
-  "description": "Persona-aware general-purpose lifecycle harness for the pi coding agent. Injects a deterministic, testable, byte-citable persona prompt segment before the first token of a pi session, and drives a full Spec-Driven Development lifecycle (explore -> propose -> apply -> archive) plus an optional review state machine, with the active persona carrying through every phase.",
+  "version": "0.6.2",
+  "description": "Pi extension: persona-aware general-purpose lifecycle harness for the pi coding agent. Injects a deterministic, testable, byte-citable persona prompt segment before the first token of a pi session (mode, locale). Drives the full Spec-Driven Development lifecycle (explore -> propose -> apply -> archive), a 6-state review machine with content-bound receipts, and a 5-lens static-analysis framework (risk/correctness/security/readability/spec-compliance) with P0–P3 severity. 0 deps, 0 native, 0 postinstall.",
   "type": "module",
   "license": "MIT",
   "homepage": "https://github.com/lyssom/pi-caduceus",
@@ -14,15 +14,19 @@
   },
   "keywords": [
     "pi-package",
+    "pi-extension",
     "pi",
     "pi-coding-agent",
     "caduceus",
     "persona",
-    "prompt-orchestration",
     "persona-contract",
+    "prompt-orchestration",
+    "lifecycle",
+    "lens-framework",
     "sdd",
     "spec-driven-development",
     "review-gate",
+    "static-analysis",
     "constitutional-ai"
   ],
   "peerDependencies": {

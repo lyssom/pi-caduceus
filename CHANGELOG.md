@@ -2,6 +2,19 @@
 
 All notable changes to **caduceus** are documented here.
 
+## [0.6.2] - 2026-08-17 — Discoverability (PATCH)
+
+### Changed
+
+- **Description** rewritten to lead with `Pi extension:` so npm search
+  ranks pi-caduceus alongside other `pi-*` packages (was ranked
+  ~#500 in npm search due to description text-relevance; v0.6.0
+  description started with "Persona-aware..." which missed the "Pi"
+  token at the search head).
+- **Keywords** expanded from 11 → 16 with high-value search terms:
+  `pi-extension`, `lifecycle`, `lens-framework`, `static-analysis`
+  added; existing keywords retained.
+
 ## [0.6.1] - 2026-08-17 — Package Metadata (PATCH)
 
 ### Fixed
