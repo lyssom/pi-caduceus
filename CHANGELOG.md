@@ -2,6 +2,16 @@
 
 All notable changes to **caduceus** are documented here.
 
+## [0.6.1] - 2026-08-17 — Package Metadata (PATCH)
+
+### Fixed
+
+- **`package.json`** now declares `homepage`, `repository`, and
+  `bugs` fields so `npm view`, the npm registry page, and the
+  pi.dev package catalog can link back to the GitHub repo.
+  No source/test changes; pure metadata fix to improve
+  discoverability after the v0.6.0 publish.
+
 ## [0.6.0] - 2026-08-14 — Lens Collection (MINOR)
 
 Phase B of the lifecycle evolution: the v0.5.0 lens framework is
