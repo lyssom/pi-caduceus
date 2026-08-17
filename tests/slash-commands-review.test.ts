@@ -14,7 +14,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { registerReviewSlashCommands } from "../lib/slash-commands-review.ts";
+import { registerReviewSlashCommands, formatSnapshot } from "../lib/slash-commands-review.ts";
 import type { ReviewCommandDeps } from "../lib/slash-commands-review.ts";
 import { CaduceusReviewError } from "../lib/errors.ts";
 
@@ -129,11 +129,7 @@ function makeMockDeps(overrides: Partial<ReviewCommandDeps> = {}): ReviewCommand
     },
     resetReview: (changeName, cwd) => {
       calls.push({ fn: "resetReview", args: { changeName, cwd } });
-      return { ok: true };
-    },
-    inspectIsCorrupted: (changeName, cwd) => {
-      calls.push({ fn: "inspectIsCorrupted", args: { changeName, cwd } });
-      return false;
+      return { ok: true, archivedPath: "state.json.corrupt-test" };
     },
     getActivePersonaName: () => "architect",
     ...overrides,
@@ -305,4 +301,110 @@ test("T10-R-REVIEWSLASH-10: /caduceus:review:start with empty arg shows usage hi
     notifications.some((n) => n.message.includes("usage:") && n.type === "warning"),
   );
   assert.equal(deps.calls.filter((c) => c.fn === "startReview").length, 0);
+});
+
+// ---------------------------------------------------------------------------
+// T12 tests (v0.6.0 formatSnapshot lens runs block)
+// ---------------------------------------------------------------------------
+
+function makeSnap(overrides: Partial<ReviewSnapshot> = {}): ReviewSnapshot {
+  return {
+    schemaVersion: 1,
+    changeId: overrides.changeId ?? "test-change",
+    state: overrides.state ?? "finalized",
+    lensRuns: overrides.lensRuns ?? [],
+    personaSnapshot: overrides.personaSnapshot ?? {
+      activePersona: "default",
+      mode: "default",
+      locale: "auto",
+    },
+    lastTransitionAt: overrides.lastTransitionAt ?? "2026-08-14T12:00:00.000Z",
+    transitionHistory: overrides.transitionHistory ?? [],
+    ...overrides,
+  };
+}
+
+test("T12-R-SLASH-1: formatSnapshot with 0 lens runs omits the lens runs block", () => {
+  const out = formatSnapshot(makeSnap());
+  assert.ok(!out.includes("lens runs:"), `expected NO 'lens runs:' line; got:\n${out}`);
+});
+
+test("T12-R-SLASH-2: formatSnapshot with 2 lens runs shows count + detail lines", () => {
+  const runs: LensRunDetail[] = [
+    {
+      lensId: "security",
+      status: "completed",
+      personaRequired: true,
+      findingsCount: 3,
+      startedAt: "2026-08-14T12:00:00.000Z",
+      completedAt: "2026-08-14T12:00:00.012Z",
+      durationMs: 12,
+      findings: [],
+    },
+    {
+      lensId: "risk",
+      status: "completed",
+      personaRequired: true,
+      findingsCount: 1,
+      startedAt: "2026-08-14T12:00:00.000Z",
+      completedAt: "2026-08-14T12:00:00.005Z",
+      durationMs: 5,
+      findings: [],
+    },
+  ];
+  const out = formatSnapshot(makeSnap({ lensRuns: runs }));
+  assert.match(out, /^lens runs: 2$/m);
+  assert.match(out, /- security: completed \(3 findings, 12ms\)/);
+  assert.match(out, /- risk: completed \(1 finding, 5ms\)/);
+});
+
+test("T12-R-SLASH-3: formatSnapshot shows singular 'finding' for count=1", () => {
+  const runs: LensRunDetail[] = [
+    {
+      lensId: "risk",
+      status: "completed",
+      personaRequired: true,
+      findingsCount: 1,
+      startedAt: "2026-08-14T12:00:00.000Z",
+      completedAt: "2026-08-14T12:00:00.005Z",
+      durationMs: 5,
+      findings: [],
+    },
+  ];
+  const out = formatSnapshot(makeSnap({ lensRuns: runs }));
+  assert.match(out, /\(1 finding,/);
+});
+
+test("T12-R-SLASH-4: formatSnapshot shows skipped/failed status", () => {
+  const runs: LensRunDetail[] = [
+    {
+      lensId: "security",
+      status: "skipped",
+      personaRequired: true,
+      findingsCount: 0,
+      startedAt: "2026-08-14T12:00:00.000Z",
+      completedAt: "2026-08-14T12:00:00.000Z",
+      durationMs: 0,
+      findings: [],
+    },
+  ];
+  const out = formatSnapshot(makeSnap({ lensRuns: runs }));
+  assert.match(out, /- security: skipped \(0 findings, 0ms\)/);
+});
+
+test("T12-R-SLASH-5: formatSnapshot preserves base fields (state, changeId, persona)", () => {
+  const out = formatSnapshot(
+    makeSnap({
+      changeId: "v0.6.0-lens-collection",
+      state: "finalized",
+      personaSnapshot: {
+        activePersona: "security",
+        mode: "default",
+        locale: "auto",
+      },
+    }),
+  );
+  assert.match(out, /^review state: finalized$/m);
+  assert.match(out, /^changeId: v0\.6\.0-lens-collection$/m);
+  assert.match(out, /^persona: security$/m);
 });

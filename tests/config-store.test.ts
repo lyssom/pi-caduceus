@@ -54,8 +54,8 @@ function cleanup(home: string): void {
 // CADUCEUS_VERSION
 // ---------------------------------------------------------------------------
 
-test("CADUCEUS_VERSION is '0.5.0'", () => {
-  assert.equal(CADUCEUS_VERSION, "0.5.0");
+test("CADUCEUS_VERSION is '0.6.0'", () => {
+  assert.equal(CADUCEUS_VERSION, "0.6.0");
 });
 
 // ---------------------------------------------------------------------------

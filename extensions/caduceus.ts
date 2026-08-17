@@ -42,6 +42,7 @@ import {
   advanceReview,
   finalizeReview,
   validateReview,
+  resetReview,
 } from "../lib/review-state-machine.ts";
 import { composeSystemPrompt } from "../lib/prompt-mode.ts";
 import {
@@ -245,11 +246,12 @@ export default function caduceus(pi: ExtensionAPI): void {
       advanceReview,
       finalizeReview,
       validateReview,
-      // resetReview: full archive+clear logic is exposed in v0.6.x.
-      // Phase A exposes a no-op stub via the slash command's own
-      // state-corruption check (design.md §12 R3); the slash command
-      // reports "nothing to reset" when the state is not corrupted.
-      resetReview: (_changeName: string, _cwd: string) => ({ ok: false }),
+      // v0.6.0: real archive+clear implementation (was a no-op stub in v0.5.0)
+      resetReview: (
+        changeName: string,
+        cwd: string,
+      ): { ok: true; archivedPath: string } | { ok: false; reason: string } =>
+        resetReview(changeName, cwd),
       inspectIsCorrupted: (changeName: string, cwd: string) =>
         inspectReview(changeName, cwd).state === "corrupted",
       getActivePersonaName: () =>

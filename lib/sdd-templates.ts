@@ -41,7 +41,7 @@ export type SddTemplateContext = {
 // Internal: marker + version
 // ---------------------------------------------------------------------------
 
-const TEMPLATE_VERSION = "0.5.0";
+const TEMPLATE_VERSION = "0.6.0";
 
 function marker(id: SddTemplateId): string {
   return `<!-- caduceus:${id}-template-version ${TEMPLATE_VERSION} -->`;
@@ -54,7 +54,7 @@ function marker(id: SddTemplateId): string {
 function renderProposal(ctx: SddTemplateContext): string {
   return `${marker("proposal")}
 
-# caduceus v0.5.0 — ${ctx.changeName}
+# caduceus v0.6.0 — ${ctx.changeName}
 
 > **Status:** Proposal draft. Awaiting \`design\` phase.
 > **Date:** ${ctx.date}
@@ -103,7 +103,7 @@ and behavior.
 function renderDesign(ctx: SddTemplateContext): string {
   return `${marker("design")}
 
-# caduceus v0.5.0 — Design
+# caduceus v0.6.0 — Design
 
 > **Status:** Design draft. Awaiting \`tasks\` phase.
 > **Date:** ${ctx.date}
@@ -143,10 +143,21 @@ List the test files to add or modify.
 `;
 }
 
+/**
+ * Render the per-task 'Done when:' verification contract line.
+ * v0.6.0+: every `## Task N:` block must contain this line; the
+ * `correctness` lens (lib/lens/correctness.ts) enforces its presence
+ * on changes whose tasks.md carries the v0.6.0 template version
+ * marker.
+ */
+function renderTaskContract(_taskNumber: number): string {
+  return `**Done when:** <state observable completion criterion>`;
+}
+
 function renderTasks(ctx: SddTemplateContext): string {
   return `${marker("tasks")}
 
-# caduceus v0.5.0 — Tasks
+# caduceus v0.6.0 — Tasks
 
 > **Date:** ${ctx.date}
 > **Change:** \`${ctx.changeName}\`
@@ -157,6 +168,7 @@ function renderTasks(ctx: SddTemplateContext): string {
 - [ ] Step 1.2 — GREEN implementation
 - [ ] Step 1.3 — TRIANGULATE second test
 - [ ] Step 1.4 — REFACTOR
+${renderTaskContract(1)}
 
 ## Task 2: Second implementation task
 
@@ -164,11 +176,13 @@ function renderTasks(ctx: SddTemplateContext): string {
 - [ ] Step 2.2 — GREEN implementation
 - [ ] Step 2.3 — TRIANGULATE second test
 - [ ] Step 2.4 — REFACTOR
+${renderTaskContract(2)}
 
 ## Task 3: Documentation update
 
 - [ ] Step 3.1 — Update README
 - [ ] Step 3.2 — Update CHANGELOG
+${renderTaskContract(3)}
 `;
 }
 

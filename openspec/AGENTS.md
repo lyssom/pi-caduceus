@@ -82,6 +82,15 @@ to one of these requires an explicit proposal amendment.
 10. **v0.5.0 (added)**: The 21 slash commands (10 core + 5 SDD + 6 review)
     are registered when `registerAllSlashCommands` is called (verified by
     `tests/extension-entry.test.ts`).
+11. **v0.6.0 (added)**: `lib/sdd-templates.ts` `renderTasks` MUST include
+    an optional `## Verification contract (per task)` section with a
+    `**Done when:**` placeholder per task. The `correctness` lens
+    (`lib/lens/correctness.ts`) MUST fire "Done when" detection ONLY on
+    changes whose `tasks.md` carries the v0.6.0 template version marker
+    (`<!-- caduceus:tasks-template-version 0.6.0 -->`); v0.5.0-archived
+    changes MUST be exempt (no false positives on archive).
+    Bumping the marker is the gating mechanism for new template-driven
+    lens rules.
 
 ## Strict TDD posture
 

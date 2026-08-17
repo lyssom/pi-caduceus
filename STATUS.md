@@ -45,21 +45,22 @@ are **independent and benchmark each other**, not derivatives.
    harness"      layer"
 ```
 
-## 2. v0.5.0 snapshot (current shipped release)
+## 2. v0.6.0 snapshot (current shipped release)
 
 | Dimension | Value |
 |---|---|
-| npm | `pi-caduceus@0.4.0` |
-| Source files (non-test) | 32 |
-| Lines of source (TS/MJS) | ~5,814 |
-| Tarball size | 52.9 kB |
+| npm | `pi-caduceus@0.6.0` |
+| Source files (non-test) | 40 |
+| Lines of source (TS/MJS) | ~7,300 |
+| Tarball size | ~70 kB (target) |
 | 0 runtime deps | ✓ |
 | 0 native binaries | ✓ |
 | 0 postinstall | ✓ |
-| Tests | 186 across 13 files |
-| Pre-publish verify checks | 14 (incl. brand-independence grep) |
+| Tests | 382 across 22 files (+73 new for v0.6.0) |
+| Pre-publish verify checks | 17/17 (no new checks in v0.6.0) |
 | Built-in personas | 10 |
-| Slash commands | 14 |
+| Slash commands | 21 |
+| Lens implementations | 5 (risk/correctness/security/readability/spec-compliance) |
 
 ### 2.1 What ships in v0.5.0
 
@@ -295,6 +296,26 @@ caduceus/
 - Promote `resetReview` from no-op stub to full archive + clear
   logic (currently a stub wired in extensions/caduceus.ts).
 
+### v0.6.0 (Phase B — Lens Collection) — **shipped 2026-08-14**
+
+- 5 lens implementations in `lib/lens/` (pure-TS static analysis; see
+  README "Lens Framework" for full table)
+- State machine integration: `finalizeReview` runs persona-required
+  lenses and captures results in `LensRunDetail[]`
+- Receipt schema extended (`lensRuns: LensRunDetail[]` with per-lens
+  findings; backward-compatible with v0.5.0 empty `lensRuns`)
+- `resetReview` promoted from no-op stub to real archive-and-clear
+  operation (`design.md` §9)
+- `inspectIsCorrupted` real implementation (uses `inspectReview`)
+- `finalizeReview` made `async`; `slash-commands-review.ts` updated
+- Tasks.md template bumped to v0.6.0 with optional `**Done when:**`
+  contract per task (REQ-019 / CON-008); lens fires only on v0.6.0+
+  changes to avoid false positives on v0.5.0 archive
+- FormatSnapshot lens runs block (multi-line per-lens detail)
+- dracond reference (pi-goal-list-loop-audit) documented as a
+  deferred v0.8.0+ evaluation candidate (AGPL-3.0 license isolation;
+  see RESEARCH.md §2)
+
 ### v0.7.0 (Phase C — subagent orchestration)
 
 - Persona-aware subagent routing: dispatch to sub-agents that
@@ -339,6 +360,12 @@ decisions are appended to this list.
  | 2026-08 (v0.5.0) | Constitution pattern adopted for change-level constraints | Marri 2026 Constitutional SDD pattern, lighter than state machine enforcement |
  | 2026-08 (v0.5.0) | Slash command grouping: flat for existing, grouped for new | Backward compat + progressive enhancement |
  | 2026-08-14 (caduceus-v0.5.0-lifecycle-foundation) | archived via sdd-archive | _via sdd-archive_ |
+| 2026-08 (v0.6.0) | 5 lens implementations populate the v0.5.0 framework | Phase B of lifecycle evolution; persona-aware static analysis |
+| 2026-08 (v0.6.0) | Template version bump gates "Done when:" detection | Avoid false positives on v0.5.0 archive (CON-008 / REQ-020) |
+| 2026-08 (v0.6.0) | finalizeReview became async; all callers updated | Required to await lens execution before writing receipt |
+| 2026-08 (v0.6.0) | dracond (pi-goal-list-loop-audit) referenced at design-pattern level only | AGPL-3.0-only license; caduceus (MIT) cannot import; detached-auditor evaluation deferred to v0.8.0+ |
+| (caduceus-v0.6.0-lens-collection) | _pending sdd-archive_ | _via sdd-archive_ |
+| 2026-08-17 (caduceus-v0.6.0-lens-collection) | archived via sdd-archive | _via sdd-archive_ |
 
 ## 9. What this document is NOT
 

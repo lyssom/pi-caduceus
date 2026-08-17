@@ -85,11 +85,11 @@ test("T02-R-TPL-3: renderTemplate is byte-stable for identical contexts", () => 
 
 test("T02-R-TPL-4: every template carries the caduceus version marker", () => {
   const expectations: Record<string, RegExp> = {
-    proposal: /<!-- caduceus:proposal-template-version 0\.5\.0 -->/,
-    design: /<!-- caduceus:design-template-version 0\.5\.0 -->/,
-    tasks: /<!-- caduceus:tasks-template-version 0\.5\.0 -->/,
-    requirements: /<!-- caduceus:requirements-template-version 0\.5\.0 -->/,
-    constitution: /<!-- caduceus:constitution-template-version 0\.5\.0 -->/,
+    proposal: /<!-- caduceus:proposal-template-version 0\.6\.0 -->/,
+    design: /<!-- caduceus:design-template-version 0\.6\.0 -->/,
+    tasks: /<!-- caduceus:tasks-template-version 0\.6\.0 -->/,
+    requirements: /<!-- caduceus:requirements-template-version 0\.6\.0 -->/,
+    constitution: /<!-- caduceus:constitution-template-version 0\.6\.0 -->/,
   };
   for (const id of TEMPLATE_IDS) {
     const out = renderTemplate(id, CTX);
@@ -180,7 +180,7 @@ test("T02-R-TPL-10: renderTemplate substitutes changeName into output", () => {
 test("T02-R-TPL-11: proposal template has SDD canonical section structure", () => {
   const out = renderTemplate("proposal", CTX);
   // Numbered section headings (matches v0.4.0 proposal convention)
-  assert.match(out, /^# caduceus v0\.5\.0 —/m, "missing versioned title");
+  assert.match(out, /^# caduceus v0\.6\.0 —/m, "missing versioned title");
   assert.match(out, /^## 1\. Intent/m);
   assert.match(out, /^## 2\. Why now/m);
   assert.match(out, /^## 3\. Scope/m);
@@ -282,5 +282,47 @@ test("T02-R-TPL-18: tasks template has sequentially numbered task headings", () 
   assert.match(out, /^## Task 1:/m);
   assert.match(out, /^## Task 2:/m);
   assert.match(out, /^## Task 3:/m);
+});
+
+// ---------------------------------------------------------------------------
+// Test 19 (v0.6.0 T01-RED): every ## Task N: block in renderTasks contains
+// a '**Done when:**' line (REQ-019, design.md §6.2)
+// ---------------------------------------------------------------------------
+
+test("T01-R-TPL-19: every '## Task N:' block in renderTasks contains '**Done when:**'", () => {
+  const out = renderTemplate("tasks", CTX);
+  const headingRe = /^## Task (\d+):/gm;
+  const headings = [...out.matchAll(headingRe)];
+  assert.ok(
+    headings.length >= 3,
+    `expected ≥3 task headings, got ${headings.length}`,
+  );
+  for (let i = 0; i < headings.length; i++) {
+    const blockStart = headings[i].index!;
+    const blockEnd =
+      i + 1 < headings.length ? headings[i + 1].index! : out.length;
+    const block = out.slice(blockStart, blockEnd);
+    assert.match(
+      block,
+      /\*\*Done when:\*\*/,
+      `task block ${i + 1} (after heading "${headings[i][0]}") missing '**Done when:**' line`,
+    );
+  }
+});
+
+// ---------------------------------------------------------------------------
+// Test 20 (v0.6.0 T01-TRIANGULATE): 'Done when:' line count equals task
+// heading count (forces 1-per-task, not 0 or 1 globally)
+// ---------------------------------------------------------------------------
+
+test("T01-R-TPL-20: '**Done when:**' line count equals task heading count", () => {
+  const out = renderTemplate("tasks", CTX);
+  const headingCount = (out.match(/^## Task \d+:/gm) ?? []).length;
+  const doneWhenCount = (out.match(/\*\*Done when:\*\*/g) ?? []).length;
+  assert.equal(
+    doneWhenCount,
+    headingCount,
+    `expected ${headingCount} 'Done when:' lines (1 per task), got ${doneWhenCount}`,
+  );
 });
 

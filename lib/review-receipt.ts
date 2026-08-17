@@ -25,7 +25,7 @@ import {
 import { join, basename } from "node:path";
 
 import { CaduceusReviewError } from "./errors.ts";
-import type { PersonaSnapshot, LensRunSummary } from "./review-types.ts";
+import type { PersonaSnapshot, LensRunDetail } from "./review-types.ts";
 
 // ---------------------------------------------------------------------------
 // Public types
@@ -35,7 +35,13 @@ export type ReviewReceipt = {
   schemaVersion: 1;
   changeId: string;
   contentHash: string;
-  lensRuns: ReadonlyArray<LensRunSummary>;
+  /**
+   * Per-lens run records. v0.5.0 receipts carry `[]` (empty array);
+   * v0.6.0+ receipts carry populated `LensRunDetail[]` with findings.
+   * The field type is widened from `LensRunSummary[]` (v0.5.0) to
+   * `LensRunDetail[]` (v0.6.0+); empty arrays validate either way.
+   */
+  lensRuns: ReadonlyArray<LensRunDetail>;
   personaSnapshot: PersonaSnapshot;
   finalVerificationPassed: boolean;
   createdAt: string;
@@ -122,6 +128,7 @@ export function writeReceipt(
   changeDir: string,
   personaSnapshot: PersonaSnapshot,
   finalVerificationPassed: boolean,
+  lensRuns: ReadonlyArray<LensRunDetail> = [],
 ): ReviewReceipt {
   const reviewDir = join(changeDir, ".review");
   mkdirSync(reviewDir, { recursive: true });
@@ -133,7 +140,7 @@ export function writeReceipt(
     schemaVersion: 1,
     changeId,
     contentHash,
-    lensRuns: [],
+    lensRuns,
     personaSnapshot,
     finalVerificationPassed,
     createdAt: new Date().toISOString(),

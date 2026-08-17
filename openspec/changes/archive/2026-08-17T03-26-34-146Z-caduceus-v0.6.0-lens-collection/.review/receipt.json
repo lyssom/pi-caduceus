@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "changeId": "caduceus-v0.6.0-lens-collection",
+  "contentHash": "sha256:ee7418090d948b9ca17d6996c609fbfd8b49b655dd865d08f71dd23bc88f7a17",
+  "lensRuns": [],
+  "personaSnapshot": {
+    "activePersona": "default",
+    "mode": "default",
+    "locale": "auto"
+  },
+  "finalVerificationPassed": true,
+  "createdAt": "2026-08-17T03:26:34.146Z",
+  "finalizedAt": "2026-08-17T03:26:34.146Z",
+  "validatedAt": null
+}

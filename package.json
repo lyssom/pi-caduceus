@@ -1,6 +1,6 @@
 {
   "name": "pi-caduceus",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Persona-aware general-purpose lifecycle harness for the pi coding agent. Injects a deterministic, testable, byte-citable persona prompt segment before the first token of a pi session, and drives a full Spec-Driven Development lifecycle (explore -> propose -> apply -> archive) plus an optional review state machine, with the active persona carrying through every phase.",
   "type": "module",
   "license": "MIT",
@@ -41,7 +41,7 @@
     "LICENSE"
   ],
   "scripts": {
-    "test": "node --experimental-strip-types --test tests/*.test.ts",
+    "test": "node --experimental-strip-types --test $(find tests -type f -name '*.test.ts' | sort)",
     "verify": "node scripts/verify-package.mjs",
     "prepack": "node scripts/verify-package.mjs"
   }

@@ -201,6 +201,149 @@ test("T05-R-RECEIPT-9: validateReceipt detects hash mismatch after content chang
 });
 
 // ---------------------------------------------------------------------------
+// v0.6.0 T09 tests — receipt extension (lensRuns field)
+// ---------------------------------------------------------------------------
+
+import type { LensRunDetail } from "../lib/review-types.ts";
+
+const SAMPLE_LENS_RUN: LensRunDetail = {
+  lensId: "security",
+  status: "completed",
+  personaRequired: true,
+  findingsCount: 1,
+  startedAt: "2026-08-14T12:00:00.000Z",
+  completedAt: "2026-08-14T12:00:00.005Z",
+  durationMs: 5,
+  findings: [
+    {
+      severity: "P1",
+      summary: "secret-like keyword 'password' in tasks.md",
+      location: "tasks.md",
+      recommendation: "Use a secrets manager.",
+      line: 17,
+    },
+  ],
+  truncated: false,
+};
+
+// ---------------------------------------------------------------------------
+// Test T09-1 (RED): writeReceipt with no 4th arg → lensRuns: []
+// ---------------------------------------------------------------------------
+
+test("T09-R-RECEIPT-1: writeReceipt 3-arg defaults lensRuns to [] (v0.5.0-compatible)", () => {
+  const dir = makeChangeDir();
+  try {
+    const r = writeReceipt(dir, PERSONA, true);
+    assert.equal(r.lensRuns.length, 0);
+    // Read raw JSON and confirm shape
+    const raw = JSON.parse(
+      readFileSync(join(dir, ".review", "receipt.json"), "utf8"),
+    );
+    assert.deepEqual(raw.lensRuns, []);
+  } finally {
+    rmSync(dir, { recursive: true });
+  }
+});
+
+// ---------------------------------------------------------------------------
+// Test T09-2 (RED): writeReceipt with lensRuns 4th arg → populated
+// ---------------------------------------------------------------------------
+
+test("T09-R-RECEIPT-2: writeReceipt 4-arg populates lensRuns (v0.6.0 shape)", () => {
+  const dir = makeChangeDir();
+  try {
+    const r = writeReceipt(dir, PERSONA, true, [SAMPLE_LENS_RUN]);
+    assert.equal(r.lensRuns.length, 1);
+    assert.equal(r.lensRuns[0]!.lensId, "security");
+    assert.equal(r.lensRuns[0]!.findings.length, 1);
+    assert.equal(r.lensRuns[0]!.findings[0]!.line, 17);
+    // Raw JSON shape
+    const raw = JSON.parse(
+      readFileSync(join(dir, ".review", "receipt.json"), "utf8"),
+    );
+    assert.equal(raw.lensRuns.length, 1);
+    assert.equal(raw.lensRuns[0].lensId, "security");
+  } finally {
+    rmSync(dir, { recursive: true });
+  }
+});
+
+// ---------------------------------------------------------------------------
+// Test T09-3 (TRIANGULATE): validateReceipt accepts v0.5.0 fixture (lensRuns: [])
+// ---------------------------------------------------------------------------
+
+test("T09-R-RECEIPT-3: validateReceipt accepts v0.5.0 fixture (lensRuns: [])", () => {
+  const dir = makeChangeDir();
+  try {
+    // Write a v0.6.0 receipt with empty lensRuns (mimics v0.5.0 shape)
+    writeReceipt(dir, PERSONA, true, []);
+    const result = validateReceipt(dir);
+    assert.equal(result.valid, true);
+  } finally {
+    rmSync(dir, { recursive: true });
+  }
+});
+
+// ---------------------------------------------------------------------------
+// Test T09-4 (TRIANGULATE): validateReceipt accepts v0.6.0 fixture (populated lensRuns)
+// ---------------------------------------------------------------------------
+
+test("T09-R-RECEIPT-4: validateReceipt accepts v0.6.0 fixture (populated lensRuns)", () => {
+  const dir = makeChangeDir();
+  try {
+    writeReceipt(dir, PERSONA, true, [SAMPLE_LENS_RUN]);
+    const result = validateReceipt(dir);
+    assert.equal(result.valid, true);
+  } finally {
+    rmSync(dir, { recursive: true });
+  }
+});
+
+// ---------------------------------------------------------------------------
+// Test T09-5: receipt contentHash unchanged by lensRuns (REQ-012)
+// ---------------------------------------------------------------------------
+
+test("T09-R-RECEIPT-5: receipt contentHash unchanged regardless of lensRuns", () => {
+  const dirA = makeChangeDir();
+  const dirB = makeChangeDir();
+  try {
+    // Same 5 MD files in both dirs; only lensRuns differs
+    writeReceipt(dirA, PERSONA, true, []);
+    writeReceipt(dirB, PERSONA, true, [SAMPLE_LENS_RUN]);
+    const a = JSON.parse(readFileSync(join(dirA, ".review", "receipt.json"), "utf8"));
+    const b = JSON.parse(readFileSync(join(dirB, ".review", "receipt.json"), "utf8"));
+    assert.equal(a.contentHash, b.contentHash, "contentHash must NOT depend on lensRuns");
+  } finally {
+    rmSync(dirA, { recursive: true });
+    rmSync(dirB, { recursive: true });
+  }
+});
+
+// ---------------------------------------------------------------------------
+// Test T09-6: writeReceipt rejects non-LensRunDetail objects (defensive)
+// ---------------------------------------------------------------------------
+
+test("T09-R-RECEIPT-6: writeReceipt serializes lensRuns with full detail fields", () => {
+  const dir = makeChangeDir();
+  try {
+    const r = writeReceipt(dir, PERSONA, true, [
+      SAMPLE_LENS_RUN,
+      { ...SAMPLE_LENS_RUN, lensId: "risk", findingsCount: 0, findings: [], truncated: true },
+    ]);
+    // Read raw JSON; confirm ordering and field shape
+    const raw = JSON.parse(
+      readFileSync(join(dir, ".review", "receipt.json"), "utf8"),
+    );
+    assert.equal(raw.lensRuns.length, 2);
+    assert.equal(raw.lensRuns[0].lensId, "security");
+    assert.equal(raw.lensRuns[1].lensId, "risk");
+    assert.equal(raw.lensRuns[1].truncated, true);
+  } finally {
+    rmSync(dir, { recursive: true });
+  }
+});
+
+// ---------------------------------------------------------------------------
 // Test 10: validateReceipt detects persona mismatch
 // ---------------------------------------------------------------------------
 

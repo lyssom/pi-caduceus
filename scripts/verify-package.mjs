@@ -94,7 +94,7 @@ check("prompts/plain.md exists", () => {
   pass("prompts/plain.md exists");
 });
 
-check("test files exist (10 expected)", () => {
+check("test files exist (22 expected)", () => {
   const expected = [
     "tests/persona-contract.test.ts",
     "tests/locale-detect.test.ts",
@@ -106,17 +106,37 @@ check("test files exist (10 expected)", () => {
     "tests/prompt-mode.test.ts",
     "tests/wizard.test.ts",
     "tests/diff.test.ts",
-        "tests/macros.test.ts",
-        "tests/profile-store.test.ts",
-      ];
-  // v0.3.0: removed tests/language-clause.test.ts (lib/language-clause.ts was
-  // deleted in the brand-independence rebrand). The test count is now 10.
+    "tests/macros.test.ts",
+    "tests/profile-store.test.ts",
+    // v0.5.0 additions
+    "tests/constitution-lint.test.ts",
+    "tests/sdd-flow.test.ts",
+    "tests/sdd-templates.test.ts",
+    "tests/prompt-mode.test.ts",
+    "tests/review-lens-framework.test.ts",
+    "tests/persona-lens-router.test.ts",
+    "tests/review-receipt.test.ts",
+    "tests/review-state-machine.test.ts",
+    "tests/slash-commands-sdd.test.ts",
+    "tests/slash-commands-review.test.ts",
+    // v0.6.0 additions
+    "tests/review-types.test.ts",
+    "tests/lens/risk.test.ts",
+    "tests/lens/correctness.test.ts",
+    "tests/lens/security.test.ts",
+    "tests/lens/readability.test.ts",
+    "tests/lens/spec-compliance.test.ts",
+    "tests/lens/index.test.ts",
+  ];
+  // v0.6.0: 22 expected test files (10 baseline + 9 v0.5.0 + 8 v0.6.0 minus
+  // 5 duplicates). New tests/lens/ subdirectory added; recursive find
+  // is required to enumerate them.
   const missing = expected.filter((p) => !existsSync(join(root, p)));
   if (missing.length > 0) {
     fail("test files exist", `missing: ${missing.join(", ")}`);
     return;
   }
-  pass("test files exist (13 expected)");
+  pass("test files exist (22 expected)");
 });
 
 check("dependencies and devDependencies are empty", () => {

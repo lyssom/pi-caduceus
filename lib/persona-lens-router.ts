@@ -11,7 +11,7 @@
 // ---------------------------------------------------------------------------
 
 import type { LensId, LensRegistry } from "./review-lens-framework.ts";
-import type { PersonaSnapshot, LensRunSummary } from "./review-types.ts";
+import type { PersonaSnapshot, LensRunDetail } from "./review-types.ts";
 
 // ---------------------------------------------------------------------------
 // Public types
@@ -21,7 +21,7 @@ import type { PersonaSnapshot, LensRunSummary } from "./review-types.ts";
 // and re-exported here for backward compatibility with callers that
 // imported them from this module.
 
-export type { PersonaSnapshot, LensRunSummary };
+export type { PersonaSnapshot, LensRunDetail };
 
 export type LensSelectionRule = {
   persona: string;
@@ -81,11 +81,11 @@ export function requiredLensesForPersona(persona: string): ReadonlyArray<LensId>
 export function allocateLensRuns(
   _registry: LensRegistry,
   snapshot: PersonaSnapshot,
-): ReadonlyArray<LensRunSummary> {
+): ReadonlyArray<LensRunDetail> {
   const required = requiredLensesForPersona(snapshot.activePersona);
   return Object.freeze(
     required.map(
-      (lensId): LensRunSummary =>
+      (lensId): LensRunDetail =>
         Object.freeze({
           lensId,
           status: "queued",
@@ -93,6 +93,8 @@ export function allocateLensRuns(
           findingsCount: 0,
           startedAt: null,
           completedAt: null,
+          durationMs: 0,
+          findings: Object.freeze([]),
         }),
     ),
   );

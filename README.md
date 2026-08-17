@@ -180,6 +180,45 @@ built-in linter enforces:
 - `CONSTITUTION_COUNT` — 0 principles → error; only MAY → warning
 - `CONSTITUTION_NO_DUPLICATE_IDS` — `CON-NNN` IDs must be unique
 
+## Lens Framework (v0.6.0)
+
+caduceus v0.6.0 populates the v0.5.0 lens framework with 5 real
+static-analysis implementations. When `/caduceus:review:finalize`
+is called, the persona-required lenses run against the change
+directory; findings are captured in the receipt's `lensRuns` field
+and surfaced in `/caduceus:review:inspect` output.
+
+| Lens | Severity | What it detects |
+|---|---|---|
+| `risk` | P1/P2/P3 | BREAKING/DEPRECAT keyword (P1); ≥3 TODO/FIXME markers (P2); >10 files in change dir (P3). |
+| `correctness` | P1/P2 | design.md references REQ-NNN not in requirements.md (P1); CON-NNN not in constitution.md (P2); tasks.md missing `**Done when:**` (P2, gated by v0.6.0 marker); task with zero checkboxes (P2). |
+| `security` | P0/P1 | MUST/SHALL-level CON-NNN lacking CWE field (P0); secret keywords in tasks/design (P1); risky shell patterns curl\|sh / wget\|sh / sudo (P1). |
+| `readability` | P2/P3 | MD file >200 lines (P2); proposal.md missing required sections (P2); depth-5+ headings (P3). |
+| `spec-compliance` | P1/P2 | REQ-NNN in requirements.md not covered by any task (P1); proposal.md §3 Scope omits changeName (P2); CON-NNN not referenced in proposal/design (P2). |
+
+### Severity tiers
+
+| Tier | Caduceus meaning |
+|---|---|
+| `P0` | Critical — must-fix. (caduceus reports only; does NOT auto-block in v0.6.0.) |
+| `P1` | Warning — review and decide. |
+| `P2` | Info — readability / consistency issue. |
+| `P3` | Style / minor — consider fixing. |
+
+### Persona → lens routing
+
+| Persona | Required lenses |
+|---|---|
+| `security` | `security`, `risk` |
+| `reviewer` | `readability`, `spec-compliance` |
+| `architect` | `spec-compliance`, `risk` |
+| `debugger` | `correctness` |
+| (others) | (none — non-binding) |
+
+The `default` and `plain` personas allocate no lenses; v0.5.0
+receipts (with `lensRuns: []`) still validate via
+`/caduceus:review:validate`.
+
 ## Built-in Personas
 
 | Persona | Category | Use case |

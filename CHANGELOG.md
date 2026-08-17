@@ -2,6 +2,88 @@
 
 All notable changes to **caduceus** are documented here.
 
+## [0.6.0] - 2026-08-14 — Lens Collection (MINOR)
+
+Phase B of the lifecycle evolution: the v0.5.0 lens framework is
+populated with 5 real static-analysis implementations, wired into
+the review state machine, and the receipt format is extended to
+carry per-lens findings. `resetReview` is promoted from a no-op
+stub to a real archive-and-clear operation.
+
+### Added
+
+- **5 lens implementations** — `lib/lens/`:
+  - `risk.ts` — BREAKING/DEPRECAT keyword detection (P1), ≥3
+    TODO/FIXME markers (P2), >10 files in change dir (P3, REQ-026).
+  - `correctness.ts` — design.md references REQ-NNN not in
+    requirements.md (P1); CON-NNN not in constitution.md (P2);
+    tasks.md missing `**Done when:**` contract (P2, gated by
+    v0.6.0 template version marker per REQ-020 / CON-008);
+    tasks.md task with zero checkboxes (P2, always).
+  - `security.ts` — MUST/SHALL-level CON-NNN lacking CWE field
+    (P0); secret-like keywords (password/api_key/token/secret)
+    in tasks.md or design.md (P1, with line); risky shell
+    patterns (curl|sh / wget|sh / sudo<space>) in tasks.md (P1).
+  - `readability.ts` — MD file > 200 lines (P2); proposal.md
+    missing required sections (P2); depth-5+ headings (P3).
+  - `spec-compliance.ts` — REQ-NNN in requirements.md not covered
+    by any task (P1); proposal.md §3 Scope omits changeName (P2);
+    CON-NNN in constitution.md not referenced in proposal/design (P2).
+- **`lib/lens/index.ts`** — `defaultLensRegistry()` factory + 
+  `registerDefaultLenses(reg)` populator.
+- **Receipt schema extended** — `ReviewReceipt.lensRuns` widened
+  from `LensRunSummary[]` (v0.5.0) to `LensRunDetail[]` (v0.6.0+)
+  with per-lens findings. v0.5.0 receipts (empty `lensRuns`) still
+  validate. `writeReceipt` accepts an optional 4th parameter
+  `lensRuns: ReadonlyArray<LensRunDetail>` defaulting to `[]`.
+- **`ReviewSnapshot.lensRuns`** widened to `LensRunDetail[]`;
+  `ReviewReceipt.contentHash` unchanged (REQ-012 — lens runs do
+  not contribute to content hash).
+- **Lens types** (`lib/review-types.ts`, `lib/review-lens-framework.ts`):
+  - `LensFinding.line?: number` for keyword findings (REQ-004).
+  - `LensFindings.truncated?: boolean` set when findings array
+    capped at 20 per REQ-005.
+  - `LensRunStatus` named type alias with 5 values:
+    `queued | running | completed | skipped | failed`.
+  - `LensRunDetail = LensRunSummary & { durationMs, findings, truncated? }`.
+- **`runLensSet`** exported from `lib/review-state-machine.ts`
+  for testability; called from `finalizeReview` to execute
+  persona-required lenses.
+- **`resetReview` real implementation** — archives
+  `.review/state.json` to `.review/state.json.corrupt-<ISO-timestamp>`
+  and (best-effort) `.review/receipt.json` to its archive
+  counterpart. Returns
+  `{ ok: true, archivedPath } | { ok: false, reason: "no-state" }`.
+- **`inspectIsCorrupted`** — real implementation via
+  `inspectReview().state === "corrupted"`; detects state.json that
+  fails JSON parse.
+- **Template bump** — `lib/sdd-templates.ts` `TEMPLATE_VERSION`
+  bumped `0.5.0 → 0.6.0`; all 5 templates carry the new marker.
+- **CADUCEUS_VERSION bumped** `0.5.0 → 0.6.0`.
+- **`finalizeReview`** made `async` (required to `await` lens
+  execution); all callers updated.
+- **Tests**: ~50 new tests across `tests/lens/*.test.ts` and
+  `tests/review-*.test.ts`. v0.6.0 total: 382 tests.
+
+### Changed
+
+- **`formatSnapshot`** now renders a multi-line `lens runs:` block
+  (count + per-lens details with status, findingsCount, durationMs)
+  when `lensRuns.length > 0`; omitted when 0.
+- **Test runner glob** — `tests/*.test.ts` → recursive
+  `find tests -name '*.test.ts'` in `package.json` to include
+  `tests/lens/*.test.ts`.
+
+### Not in scope (deferred to v0.6.x patch or v0.7.0+)
+
+- ❌ LLM-based lens (would break 0-deps invariant)
+- ❌ Network calls in lens (static analysis only)
+- ❌ Auto-block on P0 findings (v0.6.0 reports only)
+- ❌ User-configurable per-lens thresholds
+- ❌ Cross-file / cross-change lens
+- ❌ Detached auditor worker process (`pi-goal-list-loop-audit`
+  style, AGPL-3.0-only, deferred to v0.8.0+ evaluation)
+
 ## [0.5.0] - 2026-08-14 — Lifecycle Foundation (MAJOR)
 
 caduceus evolves from a focused persona-contract layer to a

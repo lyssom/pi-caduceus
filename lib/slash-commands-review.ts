@@ -53,9 +53,14 @@ export type ReviewCommandDeps = {
     changeName: string,
     cwd: string,
     passed: boolean,
-  ) => FinalizeResult;
+  ) => Promise<FinalizeResult>;
   validateReview: (changeName: string, cwd: string) => ValidateResult;
-  resetReview: (changeName: string, cwd: string) => { ok: boolean };
+  resetReview: (
+    changeName: string,
+    cwd: string,
+  ) =>
+    | { ok: true; archivedPath: string }
+    | { ok: false; reason: string };
   inspectIsCorrupted: (changeName: string, cwd: string) => boolean;
   getActivePersonaName: () => string;
 };
@@ -80,15 +85,26 @@ function parseChangeName(args: string): string {
 }
 
 /** Format a ReviewSnapshot for UI display. */
-function formatSnapshot(snap: ReviewSnapshot): string {
-  const lines = [
+export function formatSnapshot(snap: ReviewSnapshot): string {
+  const lines: string[] = [
     `review state: ${snap.state}`,
     `changeId: ${snap.changeId}`,
     `persona: ${snap.personaSnapshot.activePersona || "(none)"}`,
-    `lens runs: ${snap.lensRuns.length}`,
-    `transitions: ${snap.transitionHistory.length}`,
-    `lastTransitionAt: ${snap.lastTransitionAt}`,
   ];
+  // v0.6.0: lens runs block (omitted when 0 — empty pre-finalize state
+  // or non-binding persona). See design.md §10.
+  if (snap.lensRuns.length > 0) {
+    lines.push(`lens runs: ${snap.lensRuns.length}`);
+    for (const run of snap.lensRuns) {
+      const plural = run.findingsCount === 1 ? "" : "s";
+      const dur = `${run.durationMs}ms`;
+      lines.push(
+        `  - ${run.lensId}: ${run.status} (${run.findingsCount} finding${plural}, ${dur})`,
+      );
+    }
+  }
+  lines.push(`transitions: ${snap.transitionHistory.length}`);
+  lines.push(`lastTransitionAt: ${snap.lastTransitionAt}`);
   if (snap.error) lines.push(`error: ${snap.error}`);
   return lines.join("\n");
 }
@@ -198,7 +214,7 @@ export function registerReviewSlashCommands(
         return;
       }
       try {
-        const result = deps.finalizeReview(changeName, ctx.cwd, true);
+        const result = await deps.finalizeReview(changeName, ctx.cwd, true);
         ctx.ui.notify(
           `review finalized for '${changeName}' (passed=${result.finalVerificationPassed})`,
           "info",

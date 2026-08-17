@@ -31,12 +31,22 @@ export type LensFinding = {
   summary: string;
   location: string;
   recommendation: string;
+  /**
+   * Source line for keyword/grep findings. Omitted for section-level
+   * findings. Introduced in v0.6.0 per REQ-004 and design.md §5.
+   */
+  line?: number;
 };
 
 export type LensFindings = {
   lensId: LensId;
   findings: ReadonlyArray<LensFinding>;
   durationMs: number;
+  /**
+   * True when the findings array was capped at 20 per REQ-005.
+   * Introduced in v0.6.0 per REQ-005 and design.md §5.
+   */
+  truncated?: boolean;
 };
 
 export type Lens = {
