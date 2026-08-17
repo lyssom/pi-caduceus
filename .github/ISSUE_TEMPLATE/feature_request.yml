@@ -1,0 +1,52 @@
+name: Feature Request
+description: Propose a new feature for pi-caduceus
+labels: ["enhancement", "triage"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Suggest a feature. caduceus evolves slowly — please check
+        `STATUS.md §7` and `openspec/changes/` first to see if your
+        idea is already on the roadmap.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What problem does this solve? Who has this problem?
+      placeholder: |
+        I often want to detect X but can't because caduceus's lens
+        framework only covers static-analysis patterns. A LLM-based
+        lens would help with semantic checks.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposed-solution
+    attributes:
+      label: Proposed solution
+      description: How should caduceus handle this?
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: What other approaches did you consider?
+    validations:
+      required: false
+
+  - type: textarea
+    id: roadmap-fit
+    attributes:
+      label: Roadmap fit
+      description: Where does this fit in the v0.7.0 / v0.8.0 roadmap?
+      placeholder: |
+        See STATUS.md §7. Likely fits: v0.7.0 (subagent orchestration)
+        or v0.8.0 (goal loop + budget). Out of scope: detached auditor
+        worker (AGPL-3.0 isolation).
+    validations:
+      required: false

@@ -1,78 +1,200 @@
 # pi-caduceus
 
-> **Persona Contract package for [pi](https://pi.dev).**
-> caduceus defines personas as testable contracts. It injects a
-> deterministic, line-citable persona prompt segment before the first
-> token of a pi session, given `(mode, locale)`. 0 runtime dependencies,
-> 0 postinstall, 0 native binaries.
+[![npm version](https://img.shields.io/npm/v/pi-caduceus.svg?style=flat-square)](https://www.npmjs.com/package/pi-caduceus)
+[![npm downloads](https://img.shields.io/npm/dm/pi-caduceus.svg?style=flat-square)](https://www.npmjs.com/package/pi-caduceus)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](LICENSE)
+[![0 deps](https://img.shields.io/badge/dependencies-0-green.svg?style=flat-square)](package.json)
+[![Tests: 387](https://img.shields.io/badge/tests-387%20pass-brightgreen.svg?style=flat-square)](https://github.com/lyssom/pi-caduceus)
+[![pi.dev](https://img.shields.io/badge/pi.dev-catalog-purple.svg?style=flat-square)](https://pi.dev/packages)
 
-## Why caduceus?
+> **Persona-aware Spec-Driven Development lifecycle harness for [pi](https://pi.dev).**
+> 10 built-in caduceus-original personas, a 5-MD-file SDD change
+> lifecycle (explore → propose → apply → archive), a 6-state review
+> machine with content-bound receipts, and 5 static-analysis lenses
+> (risk/correctness/security/readability/spec-compliance) with P0–P3
+> severity. 0 runtime dependencies · 0 native binaries · 0 postinstall.
 
-Most persona layers for pi are either feature-bloated (large harness
-packages) or feature-thin (single file loaders). caduceus is the
-focused middle ground:
+## TL;DR
 
-- **Persona as a contract**: every persona must pass `/caduceus:lint`
-  (structural checks, byte-stability, conflicting-voice detection).
-- **Locale-aware**: the active persona is appended to the system prompt
-  in a way that respects the user's detected language.
-- **Replace / Append mode**: choose `append` (default — adds persona
-  to pi's existing system prompt) or `replace` (replaces entirely).
-- **Persona filesystem discovery**: drop a `.md` file into
-  `~/.pi/agent/caduceus/personas/` or `.caduceus/personas/`, switch
-  with `/caduceus:persona <name>`.
-- **Wizard**: `/caduceus:create <name> <description>` generates a new
-  persona from a name and a one-line description.
-- **Diff**: `/caduceus:diff [a [b]]` compares two personas side-by-side.
-- **10 built-in personas**, all caduceus-original.
-- **0 runtime dependencies**.
+```bash
+pi install npm:pi-caduceus
+
+# In any pi session:
+/caduceus:sdd:init my-feature            # create openspec/changes/my-feature/
+/caduceus:sdd:explore <topic>          # requirements.md skeleton
+/caduceus:sdd:propose my-feature        # render proposal.md
+/caduceus:sdd:apply                     # mark completed tasks
+/caduceus:review:start my-feature security   # persona-required lenses track
+/caduceus:review:finalize my-feature    # writes content-bound receipt
+/caduceus:sdd:archive                   # move to openspec/changes/archive/
+```
+
+## Why pi-caduceus?
+
+| Feature | pi-caduceus | gentle-pi | dracond |
+|---|---|---|---|
+| **Persona layer** | ✅ 10 built-in, byte-stable, lint-tested | ✅ 1 persona, brand-locked | ❌ |
+| **SDD lifecycle** | ✅ 5-MD-file (proposal/design/tasks/requirements/constitution) | ✅ 5-MD-file | ✅ goal-queue |
+| **Review state machine** | ✅ 6-state + content-bound receipt | ✅ Minisign-signed receipt | ✅ detached auditor |
+| **Static-analysis lenses** | ✅ 5 lenses, P0–P3 severity | ❌ | ❌ |
+| **Subagent orchestration** | ⏳ v0.7.0 | ❌ | ❌ (delegated to pi-subagents) |
+| **Goal loop + budget** | ⏳ v0.8.0 | ✅ native | ✅ mission-control |
+| **Runtime deps** | **0** | 0 | 0 |
+| **Native binaries** | **0** | yes (runtime/) | 0 |
+| **Postinstall** | **0** | yes | 0 |
+| **Tarball** | ~116 kB | ~7.6 MB | ~545 kB |
+| **LOC** | ~7,300 | ~56,000 | ~28,000 |
+| **License** | MIT | MIT | AGPL-3.0 |
+
+**Positioning**: caduceus is the **focused middle ground** between
+feature-bloated (gentle-pi, dracond) and feature-thin (one-file loaders).
+It does the persona+SDD+review+lens core well in ~7 kLOC of pure TS,
+leaves room to grow into subagent/goal layers in v0.7.0/v0.8.0,
+and bridges to nothing — every referenced pattern is re-implemented
+from scratch under MIT to preserve brand independence.
 
 ## Install
 
 ```bash
 pi install npm:pi-caduceus
+# or
+npm install -g pi-caduceus
 ```
 
-The package registers one extension (`extensions/caduceus.ts`),
-one theme (`themes/caduceus.json`), and contributes 21 slash commands
-(10 core + 5 SDD + 6 review) to pi's slash-command list.
+That's it. No native binaries download, no postinstall script runs.
+`pi` loads the extension and registers 21 slash commands on session
+start (`/caduceus:status`, `/caduceus:persona <name>`, `/caduceus:sdd:*`,
+`/caduceus:review:*`).
 
-## Quick Start
+## What's in the box
 
-Run a slash command to see the active config:
+### 10 built-in personas (`prompts/`)
 
-```text
-/caduceus:status
+`default`, `plain`, `concise`, `reviewer`, `teacher`, `security`,
+`debugger`, `socratic`, `architect`, `pirate`. Drop your own at
+`~/.pi/agent/caduceus/personas/<name>.md` (global) or
+`.caduceus/personas/<name>.md` (project). `/caduceus:lint` enforces
+8 structural checks (ID block, persona block, principles block,
+no-timestamp, `${mode}` placeholder, conflicting-voice markers, …).
+
+### Spec-Driven Development (`lib/sdd-templates.ts`)
+
+5-MD-file change artifact: `proposal.md`, `design.md`, `tasks.md`,
+`requirements.md`, `constitution.md`. The `tasks.md` template
+(v0.6.0+) includes an optional `**Done when:**` contract per task;
+the `correctness` lens fires on v0.6.0+-marker changes to enforce it.
+The `constitution.md` carries RFC 2119 levels (MUST/SHOULD/MAY) + CWE
+mappings; 5-check `constitution-lint` guards conformance.
+
+### Review state machine (`lib/review-state-machine.ts`)
+
+6-state machine: `idle → started → in-review → finalized → validated`,
+plus terminal `abandoned` and synthetic `corrupted`. Receipt is
+content-bound SHA-256 over the 5 MD files (no crypto signing; design
+choice documented in `docs/RESEARCH.md §2`). v0.6.0+ receipts carry
+per-lens findings in `lensRuns: LensRunDetail[]`.
+
+### 5 static-analysis lenses (`lib/lens/`)
+
+| Lens | Severity | Detects |
+|---|---|---|
+| `risk` | P1/P2/P3 | `BREAKING`/`DEPRECAT` keyword (P1); ≥3 `TODO`/`FIXME` markers (P2); >10 files in change dir (P3) |
+| `correctness` | P1/P2 | `design.md` references `REQ-NNN` not in `requirements.md` (P1); `CON-NNN` not in `constitution.md` (P2); `**Done when:**` missing on v0.6+ tasks (P2) |
+| `security` | P0/P1 | MUST/SHALL-level `CON-NNN` lacking `CWE` field (P0); secret keywords `password`/`api_key`/`token`/`secret` (P1); `curl\|sh`/`wget\|sh`/`sudo` (P1) |
+| `readability` | P2/P3 | MD file >200 lines (P2); `proposal.md` missing required sections (P2); depth-5+ headings (P3) |
+| `spec-compliance` | P1/P2 | `REQ-NNN` declared but uncovered (P1); `proposal.md` §3 omits `changeName` (P2); `CON-NNN` declared but unreferenced (P2) |
+
+Findings are capped at 20 per lens with `truncated: true`. Persona-aware
+routing: `security → [security, risk]`, `reviewer → [readability,
+spec-compliance]`, `architect → [spec-compliance, risk]`,
+`debugger → [correctness]`.
+
+### Profile system
+
+Save/load whole config sets as named profiles (mode + locale +
+systemPromptMode + persona). Storage:
+`~/.pi/agent/caduceus/profiles/<name>.json` (global) and
+`.caduceus/profiles/<name>.json` (project, shadows global).
+
+### Brand independence
+
+`scripts/verify-package.mjs` enforces 17 pre-publish invariants,
+including a grep for `el Gentleman`/`Rioplatense` (gentle-pi
+content) and an import-block on `pi-review`/`pi-agents`/`dracond`/
+`pi-muselinn-harness`. caduceus references their patterns at the
+design level (in `docs/RESEARCH.md §2` + `STATUS.md §8`) and
+re-implements in pure TS from scratch.
+
+## What's NOT in v0.6.0 (deliberately)
+
+| Feature | Status | Reason |
+|---|---|---|
+| Subagent orchestration | v0.7.0 | Plan: persona-aware subagent routing |
+| Goal loop + budget | v0.8.0 | Triple budget (token + turn + wallClock) |
+| LLM-based lens | never | Would break 0-deps invariant |
+| Network calls in lens | never | Static analysis only |
+| Detached auditor process | v0.8.0+ evaluation | Trigger: lens false-negative > 20%; AGPL-3.0 isolation |
+
+## Architecture (DNA-3)
+
+```
++---------------------+
+|       pi (host)     |
++---------------------+
+   |
+   v
++---------------------+
+|  extensions/caduceus.ts  |  <- SHELL (the only file that imports from pi)
++---------------------+
+   |
+   v
++---------------------+
+|  lib/  (~24 pure-TS modules) |  <- MEAT (testable in plain node)
+|  - persona-contract    |
+|  - persona-lens-router |
+|  - review-state-machine|
+|  - review-receipt     |
+|  - sdd-templates       |
+|  - sdd-flow           |
+|  - constitution-lint  |
+|  - lens/{risk,correctness,security,readability,spec-compliance}  |
++---------------------+
 ```
 
-Switch the active persona:
+The `lib/` modules are pure functions over their inputs. The shell
+in `extensions/caduceus.ts` is a thin binding that wires the slash
+commands and `before_agent_start` hook. This separation means **all
+387 tests run with plain `node --test`**, no jest, no vitest, no
+native test runner.
 
-```text
-/caduceus:persona concise
+## Testing & verification
+
+```bash
+npm test           # 387 tests, 0 failures
+node scripts/verify-package.mjs   # 17 pre-publish checks
 ```
 
-Generate a new persona from a name and description:
+Both run on plain Node 22+ with `--experimental-strip-types`. No
+build step, no TypeScript compile, no native deps.
 
-```text
-/caduceus:create wizard Speaks like a wise wizard who never gives direct answers
-```
+## License
 
-Run the persona linter:
+MIT. See [LICENSE](LICENSE).
 
-```text
-/caduceus:lint
-```
+## Acknowledgments
 
-Compare two personas:
+Patterns referenced (re-implemented in pure TS, never imported):
 
-```text
-/caduceus:diff pirate concise
-```
+- **gentle-pi** (`Gentleman-Programming/gentle-ai`) — persona layer,
+  5-MD-file SDD, review state machine
+- **dracond** (`DraconDev/pi-goal-list-loop-audit`) — detached
+  auditor worker process, regression shield, mission-control goal
+  loop (referenced for v0.8.0+ evaluation; AGPL-3.0 isolated)
+- **pi-muselinn-harness** — triple-budget goal loop (referenced for
+  v0.8.0)
+- **pi-review** — P0/P1/P2/P3 priority tier convention
 
-## Slash Commands
-
-| Command | Description |
-|---|---|
+See `docs/RESEARCH.md` and `STATUS.md §8` for full attribution.
 | `/caduceus:status` | Show the effective configuration. |
 | `/caduceus:mode <default\|plain\|auto>` | Switch persona mode (the label that runs through the persona). |
 | `/caduceus:locale <auto\|es-AR\|es-ES\|en\|zh>` | Set the locale preference. |
@@ -287,57 +409,3 @@ are resolved at render time. Supported macros:
 The `default` persona uses `${projectName}` to greet the user with
 the project name. The lint warns on unknown macros but does not
 fail.
-
-
-## What caduceus is NOT
-
-- **Not a fork of any other persona layer.** caduceus is an independent
-  product. The persona contract, the lint, the wizard, and the diff are
-  caduceus-original designs.
-- **Not a full harness.** No review tools, no subagent machinery, no SDD
-  pipeline. Those exist in other packages (e.g. `gentle-pi`).
-- **Not carrying other people's voice.** Each built-in persona is
-  caduceus-original. You don't inherit another project's tone by
-  installing caduceus.
-
-## Architecture
-
-```
-extensions/caduceus.ts        # SHELL — the only file that imports from pi
-lib/
-├── persona-contract.ts       # MEAT (pure): (mode, locale) → prompt string
-├── persona-loader.ts          # MEAT: loadPersona(name, cwd, home?)
-├── locale-detect.ts          # MEAT (pure): (text, env, cfg) → locale
-├── lint.ts                   # MEAT (pure): static persona checks
-├── prompt-mode.ts            # MEAT (pure): composeSystemPrompt(base, persona, mode)
-├── config-store.ts           # MEAT: readConfig + writeGlobalConfig + migrations
-├── slash-commands.ts         # MEAT: registerSlashCommands(pi, deps)
-├── wizard.ts                 # MEAT (pure): generatePersonaContent, validateStep
-├── diff.ts                   # MEAT (pure): personaDiff (hand-rolled Myers)
-├── errors.ts                 # CaduceusError, CaduceusConfigError, CaduceusPersonaNotFoundError, CaduceusLintError
-└── version.ts                # CADUCEUS_VERSION = "0.3.0"
-prompts/                      # 10 markdown files (one per built-in persona)
-themes/caduceus.json          # sea-blue starter theme
-tests/                        # 10 test files, 152 tests
-scripts/verify-package.mjs    # pre-publish integrity check
-```
-
-The split follows DSV DNA: the extension entry is the **shell** (talks
-to pi), the `lib/` modules are the **meat** (pure, testable, independent
-of pi's runtime).
-
-## Development
-
-```bash
-# Run the full test suite (152 tests)
-node --experimental-strip-types --test tests/*.test.ts
-# or
-pnpm test
-
-# Verify the package before publishing (13 pre-publish checks)
-node scripts/verify-package.mjs
-```
-
-## License
-
-MIT — see [LICENSE](./LICENSE).

@@ -1,0 +1,78 @@
+name: Bug Report
+description: Report a bug in pi-caduceus (a persona/SDD/review/lens issue)
+labels: ["bug", "triage"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file a bug report. Please fill out
+        the sections below so we can reproduce and fix it.
+
+  - type: input
+    id: version
+    attributes:
+      label: pi-caduceus version
+      description: Output of `npm view pi-caduceus version` (or `/caduceus:status`).
+      placeholder: e.g. 0.6.2
+    validations:
+      required: true
+
+  - type: input
+    id: node-version
+    attributes:
+      label: Node version
+      description: `node --version`
+      placeholder: e.g. v22.23.1
+    validations:
+      required: true
+
+  - type: input
+    id: install-method
+    attributes:
+      label: Install method
+      description: How was pi-caduceus installed?
+      placeholder: e.g. pi install npm:pi-caduceus
+    validations:
+      required: true
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Actual behavior. Paste command output, error messages, stack traces.
+      placeholder: |
+        /caduceus:review:finalize my-change
+        → CaduceusReviewError: not-in-review
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+      description: Expected behavior.
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: Minimal sequence to reproduce the issue.
+      placeholder: |
+        1. mkdir /tmp/repro && cd /tmp/repro
+        2. Create 5 MD files
+        3. /caduceus:sdd:init my-test
+        4. ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Anything else (screenshots, related issues, workarounds).
+    validations:
+      required: false

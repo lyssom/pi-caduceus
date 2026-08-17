@@ -1,0 +1,35 @@
+name: Question
+description: Ask how to do something with pi-caduceus
+labels: ["question"]
+assignees: []
+
+body:
+  - type: textarea
+    id: question
+    attributes:
+      label: What do you want to do?
+      description: Brief description of your goal.
+      placeholder: |
+        I want to write a custom lens that detects when a proposal
+        references a different change's REQ-NNN IDs.
+    validations:
+      required: true
+
+  - type: textarea
+    id: what-tried
+    attributes:
+      label: What have you tried so far?
+      description: Searched the README? Checked `lib/lens/*.ts`?
+      placeholder: |
+        - Read README.md "What's in the box" section
+        - Looked at lib/lens/risk.ts as a template
+    validations:
+      required: false
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: Anything else that helps (your setup, related code, …).
+    validations:
+      required: false
